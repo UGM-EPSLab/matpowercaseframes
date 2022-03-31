@@ -2,11 +2,24 @@ AMES License
 
 Copyright (c) 2020, Battelle Memorial Institute
 
-Copyright 2007 - present: numerous others credited in `<AUTHORS.rst>`_
+Copyright 2007 - 2022: numerous others credited in:
+https://github.com/ames-market/psst/AUTHORS.rst
 
 Version 5.0, June 2020
 
 https://github.com/ames-market
+
+===============================================================================
+MATPOWER Case Frames License
+
+Copyright (c) 2022 by Muhammad Yasirroni from EPSLab, Universitas Gadjah Mada
+
+MATPOWER Case Frames is the PSST fork from:
+https://github.com/ames-market/psst
+
+Latest commit: 703492fa85fc384f47603cc5a34dfccbce14e457
+
+===============================================================================
 
 TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
 
@@ -40,3 +53,20 @@ TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
    NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+===============================================================================
+
+DISCLAIMER
+
+The Software was produced by Battelle under Contract No.
+DE-AC05-76RL01830 with the Department of Energy.  The U.S. Government
+is granted for itself and others acting on its behalf a nonexclusive,
+paid-up, irrevocable worldwide license in this data to reproduce,
+prepare derivative works, distribute copies to the public, perform
+publicly and display publicly, and to permit others to do so.  The
+specific term of the license can be identified by inquiry made to
+Battelle or DOE.  Neither the United States nor the United States
+Department of Energy, nor any of their employees, makes any warranty,
+express or implied, or assumes any legal liability or responsibility
+for the accuracy, completeness or usefulness of any data, apparatus,
+product or process disclosed, or represents that its use would not
+infringe privately owned rights.
