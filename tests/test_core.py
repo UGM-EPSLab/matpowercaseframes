@@ -1,4 +1,4 @@
-
+# -*- coding: utf-8 -*-
 """
  Unit test to confirm that PSST can read the bus name strings
  along with setting the bus names as Bus1, Bus 2, ...
