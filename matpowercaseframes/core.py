@@ -15,17 +15,15 @@ from .descriptors import (
     Name,
     Version,
     BaseMVA,
-    BusName,
+
     Bus,
-    BusString,
     Branch,
-    BranchName,
     Gen,
-    GenName,
     GenCost,
-    GenFuel,
-    Load,
-    Period,
+
+    BusName,
+    BranchName,
+    GenName,
     _Attributes,
 )
 
@@ -58,7 +56,7 @@ class CaseFrames(object):
         for attribute in find_attributes(string):
             _list = parse_file(attribute, string)
             if _list is not None:
-                if len(_list) == 1 and (attribute == "version" or attribute == "baseMVA"):
+                if attribute == "version" or attribute == "baseMVA":
                     setattr(self, attribute, _list[0][0])
                 else:
                     cols = max([len(l) for l in _list])
@@ -70,11 +68,8 @@ class CaseFrames(object):
                         columns = columns[:-1] + ["{}_{}".format(columns[-1], i) for i in range(cols - len(columns), -1, -1)]
                     df = pd.DataFrame(_list, columns=columns)
 
-                    if attribute == "bus":
-                        df.set_index("BUS_I", inplace=True)
-                    if attribute == "bus_name":
-                        attribute = "bus_string"
-
+                    # TODO:
+                    # Change to mpc.bus_name
                     if attribute == "bus_name":
                         self.bus.index = df[0]
 

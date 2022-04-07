@@ -1,19 +1,8 @@
 # Copyright (c) 2020, Battelle Memorial Institute
-# Copyright 2007 - present: numerous others credited in AUTHORS.rst
-
-from __future__ import print_function
-from collections import OrderedDict
-import logging
-
-import traceback
-from builtins import super
-import six
+# Copyright 2007 - 2022: numerous others credited in AUTHORS.rst
+# Copyright 2022: https://github.com/yasirroni/
 
 import pandas as pd
-
-logger = logging.getLogger(__name__)
-logging.basicConfig()
-
 
 class Descriptor(object):
     ''' Descriptor Base class for psst case '''
@@ -61,8 +50,9 @@ class IndexDescriptor(Descriptor):
         try:
             self.setattributeindex(instance, value)
         except AttributeError:
-            logger.debug('AttributeError on instance.{} when setting index as {}'.format(self.name.replace('_name', ''), self.name))
-            logger.debug(traceback.format_exc())
+            # TODO:
+            # Check what is this
+            pass
 
         super().__set__(instance, value)
 
@@ -96,10 +86,6 @@ class Bus(Descriptor):
     name = 'bus'
     ty = pd.DataFrame
 
-class BusString(Descriptor):
-    ''' BusString Descriptor for a case '''
-    name = 'bus_string'
-    ty = pd.DataFrame
 
 class BusName(IndexDescriptor):
     ''' Bus Name Descriptor for a case
@@ -172,19 +158,6 @@ class GenCost(Descriptor):
     ty = pd.DataFrame
 
 
-# TODO: setattributeindex should change index to gen name
-class GenType(Descriptor):
-    ''' GenType Descriptor for a case '''
-    name = 'gentype'
-    ty = pd.DataFrame
-
-# TODO: setattributeindex should change index to gen name
-class GenFuel(Descriptor):
-    ''' GenFuel Descriptor for a case '''
-    name = 'genfuel'
-    ty = pd.DataFrame
-
-
 class GenName(IndexDescriptor):
     ''' Gen Name for a case '''
     name = 'gen_name'
@@ -207,37 +180,6 @@ class GenName(IndexDescriptor):
 
         if isinstance(instance.gen_name, pd.RangeIndex) or isinstance(instance.gen_name, pd.Int64Index):
             instance.gen_name = ['GenCo{}'.format(g) for g in instance.gen_name]
-
-
-class Load(Descriptor):
-    name = 'load'
-    ty = pd.DataFrame
-
-    def __set__(self, instance, value):
-        try:
-            matching_indices = set(instance.bus_name).intersection(set(value.columns)) == set(value.columns)
-        except:
-            raise AttributeError("Unable to set load. Please check that columns in load match bus names")
-
-        if matching_indices:
-            super().__set__(instance, value)
-        else:
-            raise AttributeError("Unable to set load. Please check that columns in load match bus names")
-
-
-
-class Period(IndexDescriptor):
-    name = 'period'
-    ty = pd.Index
-
-    def getattributeindex(self, instance):
-        return instance.load.index
-
-    def setattributeindex(self, instance, value):
-        hour = instance.load.index
-        instance.bus.index = value
-        # TODO : Convert to DateTimeIndex
-
 
 
 class _Attributes(Descriptor):
