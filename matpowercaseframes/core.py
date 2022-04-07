@@ -54,6 +54,10 @@ class CaseFrames(object):
             string = f.read()
 
         for attribute in find_attributes(string):
+            if attribute not in ATTRIBUTES:
+                #? Should we support custom attributes?
+                continue
+            
             _list = parse_file(attribute, string)
             if _list is not None:
                 if attribute == "version" or attribute == "baseMVA":
@@ -64,14 +68,15 @@ class CaseFrames(object):
                     columns = columns[:cols]
                     if cols > len(columns):
                         if attribute != "gencost":
-                            logger.warning("Number of columns greater than expected number.")
+                            msg = (f"Number of columns in {attribute} ({cols}) are greater than expected number.")
+                            raise IndexError(msg)
                         columns = columns[:-1] + ["{}_{}".format(columns[-1], i) for i in range(cols - len(columns), -1, -1)]
                     df = pd.DataFrame(_list, columns=columns)
 
                     # TODO:
                     # Change to mpc.bus_name
-                    if attribute == "bus_name":
-                        self.bus.index = df[0]
+                    # if attribute == "bus_name":
+                    #     self.bus.index = df[0]
 
                     setattr(self, attribute, df)
                 self._attributes.append(attribute)
