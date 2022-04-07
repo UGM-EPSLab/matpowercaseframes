@@ -1,6 +1,6 @@
-# -*- coding: utf-8 -*-
 # Copyright (c) 2020, Battelle Memorial Institute
-# Copyright 2007 - present: numerous others credited in AUTHORS.rst
+# Copyright 2007 - 2022: numerous others credited in AUTHORS.rst
+# Copyright 2022: https://github.com/yasirroni/
 
 import os
 
