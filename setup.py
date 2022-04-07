@@ -1,13 +1,22 @@
 from setuptools import setup, find_packages
+import re
+import os
 
-with open("README.md") as readme_file:
-    readme = readme_file.read()
+with open("README.md", "r") as f:
+    long_description = f.read()
+
+PACKAGE_NAME = 'matpowercaseframes'
+current_path = os.path.abspath(os.path.dirname(__file__))
+version_line = open(os.path.join(current_path, PACKAGE_NAME, 'version.py'), "rt").read()
+
+m = re.search(r"^__version__ = ['\"]([^'\"]*)['\"]", version_line, re.M)
+__version__ = m.group(1)
 
 setup(
-    name = "matpowercaseframes",
-    version = "0.0.1a0",
+    name = PACKAGE_NAME,
+    version = __version__,
     description = "Parse MATPOWER case into pandas DataFrame",
-    long_description = readme,
+    long_description = long_description,
     long_description_content_type = "text/markdown",
     author = "Muhammad Yasirroni",
     author_email = "muhammadyasirroni@gmail.com",
