@@ -34,7 +34,6 @@ def parse_file(attribute, string):
         return match
 
 def search_file(attribute, string):
-
     if attribute in ['gen', 'gencost', 'bus', 'branch']:
         pattern = r'mpc\.{}\s*=\s*\[[\n]?(?P<data>.*?)[\n]?\];'.format(attribute)
     elif attribute in ['version', 'baseMVA']:

@@ -7,7 +7,7 @@ import os
 import pandas as pd
 import numpy as np
 
-import reader
+from .reader import find_name, find_attributes, parse_file, search_file
 
 from .constants import COLUMNS, ATTRIBUTES
 
@@ -55,8 +55,8 @@ class CaseFrames(object):
         with open(filename) as f:
             string = f.read()
 
-        for attribute in reader.find_attributes(string):
-            _list = reader.parse_file(attribute, string)
+        for attribute in find_attributes(string):
+            _list = parse_file(attribute, string)
             if _list is not None:
                 if len(_list) == 1 and (attribute == "version" or attribute == "baseMVA"):
                     setattr(self, attribute, _list[0][0])
@@ -81,7 +81,7 @@ class CaseFrames(object):
                     setattr(self, attribute, df)
                 self._attributes.append(attribute)
 
-        self.name = reader.find_name(string)
+        self.name = find_name(string)
 
         try:
             # TODO:
