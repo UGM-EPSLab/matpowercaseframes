@@ -1,56 +1,38 @@
-#!/usr/bin/env python
-
-
 from setuptools import setup, find_packages
 
-with open("README.rst") as readme_file:
+with open("README.md") as readme_file:
     readme = readme_file.read()
 
-requirements = [
-    "Click>=6.0",
-    "sphinx>=1.4.1",
-    "ghp-import>=0.4.1",
-    "sphinxcontrib-fulltoc>=1.1",
-    "sphinxcontrib-jsdemo>=0.1.4",
-    "pandas",
-    "future",
-    "networkx",
-    "matplotlib",
-    "pyomo",
-    "pypower",
-    "scipy",
-]
-
-test_requirements = [
-    # TODO: put package test requirements here
-]
-
 setup(
-    name="psst",
-    version="0.1.9",
-    description="Power System Simulation Toolbox",
-    long_description=readme,
-    long_description_content_type="text/markdown",
-    author="Dheepak Krishnamurthy",
-    author_email="kdheepak89@gmail.com",
-    url="https://github.com/power-system-simulation-toolbox/psst",
-    packages=find_packages(),
-    entry_points={"console_scripts": ["psst=psst.cli:cli"]},
-    include_package_data=True,
-    install_requires=requirements,
-    license="MIT license",
-    zip_safe=False,
-    keywords="psst",
-    classifiers=[
-        "Development Status :: 4 - Beta",
-        "Intended Audience :: Developers",
+    name = "matpowercaseframes",
+    version = "0.0.1a0",
+    description = "Parse MATPOWER case into pandas DataFrame",
+    long_description = readme,
+    long_description_content_type = "text/markdown",
+    author = "Muhammad Yasirroni",
+    author_email = "muhammadyasirroni@gmail.com",
+    url = "https://github.com/UGM-EPSLab/MATPOWER-Case-Frames",
+    packages = find_packages(),
+    license = "MIT license",
+    keywords = "psst",
+    classifiers = [
         "License :: OSI Approved :: MIT License",
         "Natural Language :: English",
+        "Programming Language :: Python",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.3",
-        "Programming Language :: Python :: 3.4",
         "Programming Language :: Python :: 3.5",
+        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
     ],
-    test_suite="tests",
-    tests_require=test_requirements,
+    python_requires = '>3.6',
+    install_requires = [
+        "pandas>=1.2.0",
+        "numpy>=1.12"
+        ],
+    extras_require = {
+        "matpower": [
+            "matpower"
+        ]
+    },
+    test_suite = "tests",
 )
