@@ -4,6 +4,9 @@
 
 import pandas as pd
 
+import logging
+logger = logging.getLogger(__file__)
+
 class Descriptor(object):
     ''' Descriptor Base class for psst case '''
     name = None
