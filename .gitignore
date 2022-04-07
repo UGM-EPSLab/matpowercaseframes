@@ -1,6 +1,6 @@
-<<<<<<< HEAD
-dist/
-=======
+# Playground
+playground.ipynb
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -130,4 +130,3 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
->>>>>>> cb0fe34160dd6a2e233c08381d1328d7d09bbf4e
