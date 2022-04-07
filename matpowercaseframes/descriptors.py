@@ -32,40 +32,6 @@ class Descriptor(object):
     def _is_valid(self, instance, value):
         return True
 
-
-class IndexDescriptor(Descriptor):
-    ''' IndexDescriptor Base class for psst case '''
-
-    def __get__(self, instance, cls):
-        try:
-            index = self.getattributeindex(instance)
-            return index
-        except AttributeError:
-            super().__get__(instance, cls)
-
-    def __set__(self, instance, value):
-        if isinstance(value, pd.Series) or isinstance(value, list):
-            value = pd.Index(value)
-        elif isinstance(value, pd.DataFrame):
-            # Assume the first column in the dataframe as index.
-            value = pd.Index(value.iloc[:, 0].rename(self.name))
-
-        try:
-            self.setattributeindex(instance, value)
-        except AttributeError:
-            # TODO:
-            # Check what is this
-            pass
-
-        super().__set__(instance, value)
-
-    def getattributeindex(self, instance):
-        raise AttributeError('IndexDescriptor does not have attribute')
-
-    def setattributeindex(self, instance):
-        raise AttributeError('IndexDescriptor does not have attribute')
-
-
 class Name(Descriptor):
     ''' Name Descriptor for a case '''
     name = 'name'
@@ -90,41 +56,10 @@ class Bus(Descriptor):
     ty = pd.DataFrame
 
 
-class BusName(IndexDescriptor):
-    ''' Bus Name Descriptor for a case
-
-    Bus Name is used to set the index for bus dataframe
-    Bus Name is also used to set the from bus, to bus and gen bus for the remaining data
-
-    '''
+class BusName(Descriptor):
+    ''' Bus Name Descriptor for a case '''
     name = 'bus_name'
-    ty = pd.Index
-
-    def getattributeindex(self, instance):
-        return instance.bus.index
-
-    def setattributeindex(self, instance, value):
-        bus_name = instance.bus.index
-        instance.branch['F_BUS'] = instance.branch['F_BUS'].apply(lambda x: value[bus_name.get_loc(x)])
-        instance.branch['T_BUS'] = instance.branch['T_BUS'].apply(lambda x: value[bus_name.get_loc(x)])
-        instance.gen['GEN_BUS'] = instance.gen['GEN_BUS'].apply(lambda x: value[bus_name.get_loc(x)])
-
-        try:
-            instance.load.columns = [v for b, v in zip(instance.bus_name.isin(instance.load.columns), value) if b == True]
-        except ValueError:
-            instance.load.columns = value
-        except AttributeError:
-            instance.load = pd.DataFrame(0, index=range(0, 1), columns=value, dtype='float')
-
-        instance.bus.index = value
-        try:
-            instance.bus_string.index = value
-        except AttributeError:
-            print('no attribute named bus_string')
-
-        if isinstance(instance.bus_name, pd.RangeIndex) or isinstance(instance.bus_name, pd.Int64Index):
-            logger.debug('Forcing string types for all bus names')
-            instance.bus_name = ['Bus{}'.format(b) for b in instance.bus_name]
+    ty = pd.DataFrame
 
 
 class Branch(Descriptor):
@@ -133,20 +68,10 @@ class Branch(Descriptor):
     ty = pd.DataFrame
 
 
-class BranchName(IndexDescriptor):
-    ''' Branch Name Descriptor for a case
-
-    Branch Name is used to set the index for the branch dataframe
-
-    '''
+class BranchName(Descriptor):
+    ''' Branch Name Descriptor for a case '''
     name = 'branch_name'
-    ty = pd.Index
-
-    def getattributeindex(self, instance):
-        return instance.branch.index
-
-    def setattributeindex(self, instance, value):
-        instance.branch.index = value
+    ty = pd.DataFrame
 
 
 class Gen(Descriptor):
@@ -161,28 +86,10 @@ class GenCost(Descriptor):
     ty = pd.DataFrame
 
 
-class GenName(IndexDescriptor):
+class GenName(Descriptor):
     ''' Gen Name for a case '''
     name = 'gen_name'
-    ty = pd.Index
-
-    def getattributeindex(self, instance):
-        try:
-            if not all(instance.gen.index == instance.gencost.index):
-                logger.warning('Indices for attributes `gen` and `gencost` do not match. `gen` index will be mapped to `gencost` index')
-                instance.gencost.index = instance.gen.index
-        except AttributeError:
-            logger.debug('Unable to map `gen` indices to `gencost`')
-        except ValueError:
-            logger.debug('Unable to compare `gen` indices to `gencost`')
-        return instance.gen.index
-
-    def setattributeindex(self, instance, value):
-        instance.gen.index = value
-        instance.gencost.index = value
-
-        if isinstance(instance.gen_name, pd.RangeIndex) or isinstance(instance.gen_name, pd.Int64Index):
-            instance.gen_name = ['GenCo{}'.format(g) for g in instance.gen_name]
+    ty = pd.DataFrame
 
 
 class _Attributes(Descriptor):

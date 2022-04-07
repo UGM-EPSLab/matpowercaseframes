@@ -16,7 +16,7 @@ COLUMNS = {
         'PT', 'QT', 'MU_SF', 'MU_ST', 'MU_ANGMIN', 'MU_ANGMAX'
         ],
     'gencost': ['MODEL', 'STARTUP', 'SHUTDOWN', 'NCOST', 'COST'],
-    # 'bus_name': ['BUS_NAME_STRING']
+    'bus_name': ['BUS_NAME']
 }
 
 BUS_TYPES = {
@@ -31,7 +31,7 @@ COST_MODELS = {
     'POLYNOMIAL': 2
 }
 
-ATTRIBUTES = ('version', 'baseMVA', 'bus', 'branch', 'gen', 'gencost')
+ATTRIBUTES = ('version', 'baseMVA', 'bus', 'branch', 'gen', 'gencost', 'bus_name')
 
 # TODO:
 # Support following attributes:
@@ -39,3 +39,5 @@ ATTRIBUTES = ('version', 'baseMVA', 'bus', 'branch', 'gen', 'gencost')
 # bus_name
 # branch_name
 # gen_name
+# dcline
+# ct
