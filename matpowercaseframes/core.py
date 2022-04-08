@@ -12,8 +12,10 @@ from .reader import find_name, find_attributes, parse_file, search_file
 from .constants import COLUMNS, ATTRIBUTES
 
 class CaseFrames(object):
-    def __init__(self, filename):
+    def __init__(self, filename, update_index=True):
         self._read_matpower(filename)
+        if update_index:
+            self._update_index()
 
     def _read_matpower(self, filename):
         self._attributes = list()
@@ -31,6 +33,9 @@ class CaseFrames(object):
             if _list is not None:
                 if attribute == "version" or attribute == "baseMVA":
                     setattr(self, attribute, _list[0][0])
+                elif attribute in ['bus_name', 'branch_name', 'gen_name']:
+                    idx = pd.Index(_list)
+                    setattr(self, attribute, idx)
                 else:
                     cols = max([len(l) for l in _list])
                     columns = COLUMNS.get(attribute, [i for i in range(0, cols)])
@@ -40,12 +45,8 @@ class CaseFrames(object):
                             msg = (f"Number of columns in {attribute} ({cols}) are greater than expected number.")
                             raise IndexError(msg)
                         columns = columns[:-1] + ["{}_{}".format(columns[-1], i) for i in range(cols - len(columns), -1, -1)]
-                    df = pd.DataFrame(_list, columns=columns)
-
-                    # TODO:
-                    # Change to mpc.bus_name
-                    # if attribute == "bus_name":
-                    #     self.bus.index = df[0]
+                    else:
+                        df = pd.DataFrame(_list, columns=columns)
 
                     setattr(self, attribute, df)
                 self._attributes.append(attribute)
@@ -58,3 +59,19 @@ class CaseFrames(object):
             self.gencost.loc[self.gencost["COST_2"] == 0, "NCOST"] = 2
         except:
             pass
+
+    def _update_index(self):
+        if 'bus_name' in self._attributes:
+            self.bus.set_index(self.bus_name, drop=False, inplace=True)
+        else:
+            self.bus.set_index(pd.RangeIndex(1,len(self.bus.index)+1,1), drop=False, inplace=True)
+
+        if 'branch_name' in self._attributes:
+            self.branch.set_index(self.branch_name, drop=False, inplace=True)
+        else:
+            self.branch.set_index(pd.RangeIndex(1,len(self.branch.index)+1,1), drop=False, inplace=True)
+        
+        if 'gen_name' in self._attributes:
+            self.gen.set_index(self.gen_name, drop=False, inplace=True)
+        else:
+            self.gen.set_index(pd.RangeIndex(1,len(self.gen.index)+1,1), drop=False, inplace=True)
