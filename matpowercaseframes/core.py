@@ -11,38 +11,7 @@ from .reader import find_name, find_attributes, parse_file, search_file
 
 from .constants import COLUMNS, ATTRIBUTES
 
-from .descriptors import (
-    Name,
-    Version,
-    BaseMVA,
-
-    Bus,
-    Branch,
-    Gen,
-    GenCost,
-
-    BusName,
-    BranchName,
-    GenName,
-    _Attributes,
-)
-
 class CaseFrames(object):
-    name = Name()
-    version = Version()
-    baseMVA = BaseMVA()
-
-    bus = Bus()
-    branch = Branch()
-    gen = Gen()
-    gencost = GenCost()
-
-    bus_name = BusName()
-    branch_name = BranchName()
-    gen_name = GenName()
-
-    _attributes = _Attributes()
-
     def __init__(self, filename):
         self._read_matpower(filename)
 
