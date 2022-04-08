@@ -4,7 +4,7 @@ COLUMNS = {
         'BASE_KV', 'ZONE', 'VMAX', 'VMIN', 'LAM_P', 'LAM_Q', 'MU_VMAX',
         'MU_VMIN'
         ],
-    'gena': [
+    'gen': [
         'GEN_BUS', 'PG', 'QG', 'QMAX', 'QMIN', 'VG', 'MBASE', 'GEN_STATUS',
         'PMAX', 'PMIN', 'PC1', 'PC2', 'QC1MIN', 'QC1MAX', 'QC2MIN', 'QC2MAX',
         'RAMP_AGC', 'RAMP_10', 'RAMP_30', 'RAMP_Q', 'APF', 'MU_PMAX',

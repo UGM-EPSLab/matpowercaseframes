@@ -45,8 +45,7 @@ class CaseFrames(object):
                             msg = (f"Number of columns in {attribute} ({cols}) are greater than expected number.")
                             raise IndexError(msg)
                         columns = columns[:-1] + ["{}_{}".format(columns[-1], i) for i in range(cols - len(columns), -1, -1)]
-                    else:
-                        df = pd.DataFrame(_list, columns=columns)
+                    df = pd.DataFrame(_list, columns=columns)
 
                     setattr(self, attribute, df)
                 self._attributes.append(attribute)
