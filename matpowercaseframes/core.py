@@ -67,5 +67,7 @@ class CaseFrames:
         
         if 'gen_name' in self._attributes:
             self.gen.set_index(self.gen_name, drop=False, inplace=True)
+            self.gencost.set_index(self.gen_name, drop=False, inplace=True)
         else:
             self.gen.set_index(pd.RangeIndex(1,len(self.gen.index)+1,1), drop=False, inplace=True)
+            self.gencost.set_index(pd.RangeIndex(1,len(self.gen.index)+1,1), drop=False, inplace=True)
