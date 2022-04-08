@@ -52,13 +52,6 @@ class CaseFrames(object):
 
         self.name = find_name(string)
 
-        try:
-            # TODO:
-            # Check what is this
-            self.gencost.loc[self.gencost["COST_2"] == 0, "NCOST"] = 2
-        except:
-            pass
-
     def _update_index(self):
         if 'bus_name' in self._attributes:
             self.bus.set_index(self.bus_name, drop=False, inplace=True)
