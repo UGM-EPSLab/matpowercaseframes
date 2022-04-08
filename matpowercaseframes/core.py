@@ -11,13 +11,15 @@ from .reader import find_name, find_attributes, parse_file, search_file
 
 from .constants import COLUMNS, ATTRIBUTES
 
-class CaseFrames(object):
+class CaseFrames:
     def __init__(self, filename, update_index=True):
         self._read_matpower(filename)
         if update_index:
             self._update_index()
 
     def _read_matpower(self, filename):
+        # Warning
+        # Re-read is not recommended since old attribute is not guaranted to be replaced
         self._attributes = list()
         self.filename = filename
 
