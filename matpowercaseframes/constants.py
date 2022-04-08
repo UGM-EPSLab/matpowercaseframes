@@ -16,7 +16,9 @@ COLUMNS = {
         'PT', 'QT', 'MU_SF', 'MU_ST', 'MU_ANGMIN', 'MU_ANGMAX'
         ],
     'gencost': ['MODEL', 'STARTUP', 'SHUTDOWN', 'NCOST', 'COST'],
-    'bus_name': ['BUS_NAME']
+    'bus_name': ['BUS_NAME'],
+    'branch_name': ['BRANCH_NAME'],
+    'gen_name': ['GEN_NAME']
 }
 
 BUS_TYPES = {
@@ -35,9 +37,5 @@ ATTRIBUTES = ('version', 'baseMVA', 'bus', 'branch', 'gen', 'gencost', 'bus_name
 
 # TODO:
 # Support following attributes:
-# name
-# bus_name
-# branch_name
-# gen_name
 # dcline
 # ct

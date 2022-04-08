@@ -36,7 +36,7 @@ class CaseFrames:
                 if attribute == "version" or attribute == "baseMVA":
                     setattr(self, attribute, _list[0][0])
                 elif attribute in ['bus_name', 'branch_name', 'gen_name']:
-                    idx = pd.Index(_list)
+                    idx = pd.Index(_list, name=attribute)
                     setattr(self, attribute, idx)
                 else:
                     cols = max([len(l) for l in _list])
