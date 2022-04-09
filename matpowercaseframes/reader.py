@@ -18,6 +18,7 @@ def find_attributes(string):
 
 def parse_file(attribute, string):
     match = search_file(attribute, string)
+
     if match is None:
         return None
     else:
@@ -39,6 +40,9 @@ def search_file(attribute, string):
         pattern = r'mpc\.{}\s*=\s*(?P<data>.*?);'.format(attribute)
     elif attribute in ['bus_name', 'branch_name', 'gen_name']:
         pattern = r'mpc\.{}\s*=\s*\{{[\n]?(?P<data>.*?)[\n]?\}};'.format(attribute)
+    else:
+        msg = f"Unknown mpc attribute name of {attribute}"
+        raise NameError(msg)
 
     match = re.search(pattern, string, re.DOTALL)
 
