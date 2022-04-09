@@ -18,35 +18,32 @@ def find_attributes(string):
 
 def parse_file(attribute, string):
     match = search_file(attribute, string)
-
-    if match is not None:
-        match = match.strip("'").strip('"')
+    if match is None:
+        return None
+    else:
         _list = list()
         for line in match.splitlines():
             line = line.split('%')[0]
             line = line.replace(';', '')
             if line.strip():
-                if attribute == 'bus_name':
+                if attribute in ['version', 'bus_name', 'branch_name', 'gen_name']:
                     _list.append([line.strip().strip("'")])
                 else:
                     _list.append([int_else_float_except_string(s) for s in line.strip().split()])
         return _list
-    else:
-        return match
 
 def search_file(attribute, string):
     if attribute in ['gen', 'gencost', 'bus', 'branch']:
         pattern = r'mpc\.{}\s*=\s*\[[\n]?(?P<data>.*?)[\n]?\];'.format(attribute)
     elif attribute in ['version', 'baseMVA']:
         pattern = r'mpc\.{}\s*=\s*(?P<data>.*?);'.format(attribute)
-    elif attribute in ['bus_name', 'gentype', 'genfuel']:
+    elif attribute in ['bus_name', 'branch_name', 'gen_name']:
         pattern = r'mpc\.{}\s*=\s*\{{[\n]?(?P<data>.*?)[\n]?\}};'.format(attribute)
 
     match = re.search(pattern, string, re.DOTALL)
 
-    if match is not None:
-        return match.groupdict().get('data', None)
+    if match is None:
+        return None
     else:
-        return match
-
-
+        match = match.groupdict().get('data', None)
+        return match.strip("'").strip('"')
