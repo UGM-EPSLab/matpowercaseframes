@@ -11,7 +11,7 @@ pip install matpowercaseframes
 ## Usage
 
 ```python
-from matpowercaseframes.core import CaseFrames
+from matpowercaseframes import CaseFrames
 
 case_path = 'case9.m'
 cf = CaseFrames(case_path)
