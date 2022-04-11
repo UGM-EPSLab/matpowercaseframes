@@ -2,20 +2,31 @@
 
 Parse MATPOWER case into pandas DataFrame
 
+## Installation
+
+```plaintext
+pip install matpowercaseframes
+```
+
 ## Usage
 
 ```python
-import os
-
 from matpowercaseframes.core import CaseFrames
+
+case_path = 'case9.m'
+cf = CaseFrames(case_path)
+
+print(cf.gencost)
+```
+
+Install `matpower-pip` using `pip install matpower` for easy `mpc` navigation.
+
+```python
+import os
 from matpower import path_matpower # require `pip install matpower`
 
 case_name = 'case9.m'
 case_path = os.path.join(path_matpower, 'data', case_name)
-
-cf = CaseFrames(case_path)
-
-print(cf.gencost)
 ```
 
 ## Related works
