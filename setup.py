@@ -23,13 +23,12 @@ setup(
     url = "https://github.com/UGM-EPSLab/MATPOWER-Case-Frames",
     packages = find_packages(),
     license = "MIT license",
-    keywords = "psst",
+    keywords = ["psst", "matpower", "parser"],
     classifiers = [
         "License :: OSI Approved :: MIT License",
         "Natural Language :: English",
         "Programming Language :: Python",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
     ],
@@ -43,5 +42,4 @@ setup(
             "matpower"
         ]
     },
-    test_suite = "tests",
 )
