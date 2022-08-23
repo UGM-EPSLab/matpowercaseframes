@@ -29,13 +29,14 @@ class CaseFrames:
             TypeError: Error input data invalid.
         """
         if isinstance(data, str):
-            # str of path or str of matpower case name 
+            # TYPE: str of path | str of matpower case name 
             if not os.path.isfile(data):
-                # str of matpower case name 
+                # TYPE: str of matpower case name 
                 if MATPOWER_EXIST:
-                    data = os.path.join(matpower.path_matpower, data)
+                    data = os.path.join(matpower.path_matpower, f"data/{data}")
             self._read_matpower(filepath=data)
         elif isinstance(data, dict):
+            # TYPE: dict | oct2py.io.Struct
             # TODO: support oct2py.io.Struct
             raise TypeError("Not yet implemented.")
         else:

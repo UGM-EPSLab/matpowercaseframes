@@ -6,12 +6,19 @@ import pytest
 from matpowercaseframes import CaseFrames
 from matpowercaseframes.idx import *
 
-CURDIR = os.path.realpath(os.path.dirname(__file__))
-CASE_PATH = os.path.join(CURDIR, "data/case9.m")
+"""
+    pytest -n auto -rA --cov-report term --cov=matpowercaseframes tests/
+"""
 
+CURDIR = os.path.realpath(os.path.dirname(__file__))
+CASE_NAME = 'case9.m'
+CASE_PATH = os.path.join(CURDIR, 'data', CASE_NAME)
 
 def test_input_str_path():
     cf = CaseFrames(CASE_PATH)
+
+def test_input_str_matpower_case_name():
+    cf = CaseFrames(CASE_NAME)
 
 # TODO: support oct2py.io.Struct
 # def test_input_oct2py_io_Struct():
