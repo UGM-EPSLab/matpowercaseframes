@@ -20,9 +20,19 @@ def test_input_str_path():
 def test_input_str_matpower_case_name():
     cf = CaseFrames(CASE_NAME)
 
-# TODO: support oct2py.io.Struct
-# def test_input_oct2py_io_Struct():
-#     cf = CaseFrames(CASE_PATH)
+def test_input_oct2py_io_Struct():
+    from matpower import start_instance
+    m = start_instance()
+
+    # before run
+    mpc = m.loadcase('case9', verbose=False)
+    cf = CaseFrames(CASE_PATH)
+
+    # after run
+    mpc = m.runpf(mpc, verbose=False)
+    cf = CaseFrames(CASE_PATH)
+
+    m.exit()
 
 def test_input_type_error():
     with pytest.raises(TypeError) as e_info:
