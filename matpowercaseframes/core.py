@@ -11,11 +11,31 @@ from .reader import find_name, find_attributes, parse_file, search_file
 
 from .constants import COLUMNS, ATTRIBUTES
 
+try:
+    import matpower
+    MATPOWER_EXIST = True
+except ImportError:
+    MATPOWER_EXIST = False
+
 class CaseFrames:
-    def __init__(self, source, update_index=True):
-        if isinstance(source, str):
-            self._read_matpower(filename=source)
-        elif isinstance(source, dict):
+    def __init__(self, data, update_index=True):
+        """Convert data into CaseFrames format
+
+        Args:
+            data (str|dict): str of path | str of matpower case name | dict | oct2py.io.Struct
+            update_index (bool, optional): Update index numbering if True. Defaults to True.
+
+        Raises:
+            TypeError: Error input data invalid.
+        """
+        if isinstance(data, str):
+            # str of path or str of matpower case name 
+            if not os.path.isfile(data):
+                # str of matpower case name 
+                if MATPOWER_EXIST:
+                    data = os.path.join(matpower.path_matpower, data)
+            self._read_matpower(filepath=data)
+        elif isinstance(data, dict):
             # TODO: support oct2py.io.Struct
             raise TypeError("Not yet implemented.")
         else:
@@ -25,13 +45,16 @@ class CaseFrames:
         if update_index:
             self._update_index()
 
-    def _read_matpower(self, filename):
-        # Warning
-        # Re-read is not recommended since old attribute is not guaranted to be replaced
-        self._attributes = list()
-        self.filename = filename
+    def _read_struct(self, struct):
+        # for k, v in struct.items():
+        #     print(k, v)
+        return None
 
-        with open(filename) as f:
+    def _read_matpower(self, filepath):
+        # !Re-read is not recommended since old attribute is not guaranted to be replaced
+        self._attributes = list()
+
+        with open(filepath) as f:
             string = f.read()
 
         for attribute in find_attributes(string):
