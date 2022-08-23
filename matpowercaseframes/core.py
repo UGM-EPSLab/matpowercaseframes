@@ -12,8 +12,16 @@ from .reader import find_name, find_attributes, parse_file, search_file
 from .constants import COLUMNS, ATTRIBUTES
 
 class CaseFrames:
-    def __init__(self, filename, update_index=True):
-        self._read_matpower(filename)
+    def __init__(self, source, update_index=True):
+        if isinstance(source, str):
+            self._read_matpower(filename=source)
+        elif isinstance(source, dict):
+            # TODO: support oct2py.io.Struct
+            raise TypeError("Not yet implemented.")
+        else:
+            message = "Source must be str path to .m file or oct2py.io.Struct or dict."
+            raise TypeError(message)
+
         if update_index:
             self._update_index()
 

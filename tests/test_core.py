@@ -1,12 +1,25 @@
 
 import os
 import numpy as np
+import pytest
 
 from matpowercaseframes import CaseFrames
 from matpowercaseframes.idx import *
 
 CURDIR = os.path.realpath(os.path.dirname(__file__))
 CASE_PATH = os.path.join(CURDIR, "data/case9.m")
+
+
+def test_input_str_path():
+    cf = CaseFrames(CASE_PATH)
+
+# TODO: support oct2py.io.Struct
+# def test_input_oct2py_io_Struct():
+#     cf = CaseFrames(CASE_PATH)
+
+def test_input_type_error():
+    with pytest.raises(TypeError) as e_info:
+        cf = CaseFrames(1)
 
 def test_read_value():
     cf = CaseFrames(CASE_PATH)
