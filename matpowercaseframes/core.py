@@ -46,7 +46,7 @@ class CaseFrames:
             self._update_index()
 
     def _read_struct(self, struct):
-        self.name = None
+        self.name = ''
 
         self._attributes = []
         for attribute, _list in struct.items():
