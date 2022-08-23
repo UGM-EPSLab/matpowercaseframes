@@ -37,8 +37,7 @@ class CaseFrames:
             self._read_matpower(filepath=data)
         elif isinstance(data, dict):
             # TYPE: dict | oct2py.io.Struct
-            # TODO: support oct2py.io.Struct
-            raise TypeError("Not yet implemented.")
+            self._read_struct(struct=data)
         else:
             message = "Source must be str path to .m file or oct2py.io.Struct or dict."
             raise TypeError(message)
@@ -47,22 +46,50 @@ class CaseFrames:
             self._update_index()
 
     def _read_struct(self, struct):
-        # for k, v in struct.items():
-        #     print(k, v)
+        self.name = None
+
+        self._attributes = []
+        for attribute, _list in struct.items():
+            if attribute not in ATTRIBUTES:
+                #? Should we support custom attributes?
+                continue
+
+            if attribute == "version" or attribute == "baseMVA":
+                setattr(self, attribute, _list)
+            elif attribute in ['bus_name', 'branch_name', 'gen_name']:
+                idx = pd.Index(_list, name=attribute)
+                setattr(self, attribute, idx)
+            else:
+                cols = _list.shape[1]
+                # NOTE: .get('key') instead of ['key'] to default range
+                columns = COLUMNS.get(attribute, [i for i in range(0, cols)])
+                columns = columns[:cols]
+                if cols > len(columns):
+                    if attribute != "gencost":
+                        msg = (f"Number of columns in {attribute} ({cols}) are greater than expected number.")
+                        raise IndexError(msg)
+                    columns = columns[:-1] + ["{}_{}".format(columns[-1], i) for i in range(cols - len(columns), -1, -1)]
+                df = pd.DataFrame(_list, columns=columns)
+                setattr(self, attribute, df)
+
+            self._attributes.append(attribute)
+
         return None
 
     def _read_matpower(self, filepath):
         # !Re-read is not recommended since old attribute is not guaranted to be replaced
-        self._attributes = list()
-
         with open(filepath) as f:
             string = f.read()
 
+        self.name = find_name(string)
+
+        self._attributes = []
         for attribute in find_attributes(string):
             if attribute not in ATTRIBUTES:
                 #? Should we support custom attributes?
                 continue
             
+            # TODO: migrate using GridCal approach
             _list = parse_file(attribute, string)
             if _list is not None:
                 if attribute == "version" or attribute == "baseMVA":
@@ -72,6 +99,7 @@ class CaseFrames:
                     setattr(self, attribute, idx)
                 else:
                     cols = max([len(l) for l in _list])
+                    # NOTE: .get('key') instead of ['key'] to default range
                     columns = COLUMNS.get(attribute, [i for i in range(0, cols)])
                     columns = columns[:cols]
                     if cols > len(columns):
@@ -83,8 +111,6 @@ class CaseFrames:
 
                     setattr(self, attribute, df)
                 self._attributes.append(attribute)
-
-        self.name = find_name(string)
 
     def _update_index(self):
         if 'bus_name' in self._attributes:
