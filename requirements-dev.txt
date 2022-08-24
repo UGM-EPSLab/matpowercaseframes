@@ -1,0 +1,8 @@
+pandas>=1.0.0
+numpy>=1.19.0
+
+oct2py>=5.5.1
+matpower>=7.1.0.2.1.4
+
+pytest
+pytest-cov

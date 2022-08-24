@@ -39,7 +39,7 @@ setup(
         ],
     extras_require = {
         "matpower": [
-            "matpower"
+            "matpower>=7.1.0.2.1.4",
         ]
     },
 )
