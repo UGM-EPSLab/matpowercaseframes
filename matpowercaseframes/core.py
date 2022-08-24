@@ -5,11 +5,9 @@
 import os
 
 import pandas as pd
-import numpy as np
 
-from .reader import find_name, find_attributes, parse_file, search_file
-
-from .constants import COLUMNS, ATTRIBUTES
+from .constants import ATTRIBUTES, COLUMNS
+from .reader import find_attributes, find_name, parse_file
 
 try:
     import matpower
@@ -17,21 +15,24 @@ try:
 except ImportError:
     MATPOWER_EXIST = False
 
+
 class CaseFrames:
     def __init__(self, data, update_index=True):
         """Convert data into CaseFrames format
 
         Args:
-            data (str|dict): str of path | str of matpower case name | dict | oct2py.io.Struct
-            update_index (bool, optional): Update index numbering if True. Defaults to True.
+            data (str|dict):
+                str of path | str of matpower case name | dict | oct2py.io.Struct
+            update_index (bool, optional):
+                Update index numbering if True. Defaults to True.
 
         Raises:
             TypeError: Error input data invalid.
         """
         if isinstance(data, str):
-            # TYPE: str of path | str of matpower case name 
+            # TYPE: str of path | str of matpower case name
             if not os.path.isfile(data):
-                # TYPE: str of matpower case name 
+                # TYPE: str of matpower case name
                 if MATPOWER_EXIST:
                     data = os.path.join(matpower.path_matpower, f"data/{data}")
             self._read_matpower(filepath=data)
@@ -51,7 +52,7 @@ class CaseFrames:
         self._attributes = []
         for attribute, _list in struct.items():
             if attribute not in ATTRIBUTES:
-                #? Should we support custom attributes?
+                # ? Should we support custom attributes?
                 continue
 
             if attribute == "version" or attribute == "baseMVA":
@@ -66,9 +67,12 @@ class CaseFrames:
                 columns = columns[:cols]
                 if cols > len(columns):
                     if attribute != "gencost":
-                        msg = (f"Number of columns in {attribute} ({cols}) are greater than expected number.")
+                        msg = (f"Number of columns in {attribute} ({cols}) are"
+                               f"greater than expected number.")
                         raise IndexError(msg)
-                    columns = columns[:-1] + ["{}_{}".format(columns[-1], i) for i in range(cols - len(columns), -1, -1)]
+                    columns = (columns[:-1]
+                               + ["{}_{}".format(columns[-1], i)
+                                  for i in range(cols - len(columns), -1, -1)])
                 df = pd.DataFrame(_list, columns=columns)
                 setattr(self, attribute, df)
 
@@ -77,7 +81,7 @@ class CaseFrames:
         return None
 
     def _read_matpower(self, filepath):
-        # !Re-read is not recommended since old attribute is not guaranted to be replaced
+        # ! Old ttribute is not guaranted to be replaced in re-read
         with open(filepath) as f:
             string = f.read()
 
@@ -86,9 +90,9 @@ class CaseFrames:
         self._attributes = []
         for attribute in find_attributes(string):
             if attribute not in ATTRIBUTES:
-                #? Should we support custom attributes?
+                # ? Should we support custom attributes?
                 continue
-            
+
             # TODO: migrate using GridCal approach
             _list = parse_file(attribute, string)
             if _list is not None:
@@ -104,9 +108,12 @@ class CaseFrames:
                     columns = columns[:cols]
                     if cols > len(columns):
                         if attribute != "gencost":
-                            msg = (f"Number of columns in {attribute} ({cols}) are greater than expected number.")
+                            msg = (f"Number of columns in {attribute} ({cols}) are"
+                                   f"greater than expected number.")
                             raise IndexError(msg)
-                        columns = columns[:-1] + ["{}_{}".format(columns[-1], i) for i in range(cols - len(columns), -1, -1)]
+                        columns = (columns[:-1]
+                                   + ["{}_{}".format(columns[-1], i)
+                                      for i in range(cols - len(columns), -1, -1)])
                     df = pd.DataFrame(_list, columns=columns)
 
                     setattr(self, attribute, df)
@@ -116,16 +123,28 @@ class CaseFrames:
         if 'bus_name' in self._attributes:
             self.bus.set_index(self.bus_name, drop=False, inplace=True)
         else:
-            self.bus.set_index(pd.RangeIndex(1,len(self.bus.index)+1,1), drop=False, inplace=True)
+            self.bus.set_index(
+                pd.RangeIndex(
+                    1, len(
+                        self.bus.index) + 1, 1), drop=False, inplace=True)
 
         if 'branch_name' in self._attributes:
             self.branch.set_index(self.branch_name, drop=False, inplace=True)
         else:
-            self.branch.set_index(pd.RangeIndex(1,len(self.branch.index)+1,1), drop=False, inplace=True)
-        
+            self.branch.set_index(
+                pd.RangeIndex(
+                    1, len(
+                        self.branch.index) + 1, 1), drop=False, inplace=True)
+
         if 'gen_name' in self._attributes:
             self.gen.set_index(self.gen_name, drop=False, inplace=True)
             self.gencost.set_index(self.gen_name, drop=False, inplace=True)
         else:
-            self.gen.set_index(pd.RangeIndex(1,len(self.gen.index)+1,1), drop=False, inplace=True)
-            self.gencost.set_index(pd.RangeIndex(1,len(self.gen.index)+1,1), drop=False, inplace=True)
+            self.gen.set_index(
+                pd.RangeIndex(
+                    1, len(
+                        self.gen.index) + 1, 1), drop=False, inplace=True)
+            self.gencost.set_index(
+                pd.RangeIndex(
+                    1, len(
+                        self.gen.index) + 1, 1), drop=False, inplace=True)

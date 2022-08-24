@@ -1,6 +1,6 @@
 #    The index, name and meaning of each column of the gencost matrix is given
 #    below:
-# 
+#
 #    columns 1-5
 #     1  MODEL       cost model, 1 = piecewise linear, 2 = polynomial
 #     2  STARTUP     startup cost in US dollars
@@ -36,17 +36,17 @@ PW_LINEAR = 1
 POLYNOMIAL = 2
 
 # define the indices
-MODEL = 0 # cost model, 1 = piecewise linear, 2 = polynomial 
-STARTUP = 1 # startup cost in US dollars
-SHUTDOWN = 2 # shutdown cost in US dollars
-NCOST = 3 # number N = n+1 of end/breakpoints in piecewise linear
-          # cost function, or of coefficients in polynomial cost fcn
-COST = 4 # parameters defining total cost function begin in this col
-         # (MODEL = 1) : p1, f1, p2, f2, ..., pN, fN
-         #       where p1 < p2 < ... < pN and the cost f(p) is defined
-         #       by the coordinates (p1,f1), (p2,f2), ..., (pN,fN) of
-         #       the end/break-points of the piecewise linear cost
-         # (MODEL = 2) : cn, ..., c1, c0
-         #       N coefficients of an n-th order polynomial cost fcn,
-         #       starting with highest order, where cost is
-         #       f(p) = cn*p^n + ... + c1*p + c0
+MODEL = 0  # cost model, 1 = piecewise linear, 2 = polynomial
+STARTUP = 1  # startup cost in US dollars
+SHUTDOWN = 2  # shutdown cost in US dollars
+NCOST = 3  # number N = n+1 of end/breakpoints in piecewise linear
+# cost function, or of coefficients in polynomial cost fcn
+COST = 4  # parameters defining total cost function begin in this col
+# (MODEL = 1) : p1, f1, p2, f2, ..., pN, fN
+#       where p1 < p2 < ... < pN and the cost f(p) is defined
+#       by the coordinates (p1,f1), (p2,f2), ..., (pN,fN) of
+#       the end/break-points of the piecewise linear cost
+# (MODEL = 2) : cn, ..., c1, c0
+#       N coefficients of an n-th order polynomial cost fcn,
+#       starting with highest order, where cost is
+#       f(p) = cn*p^n + ... + c1*p + c0

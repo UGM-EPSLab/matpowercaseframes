@@ -2,19 +2,23 @@
 # Copyright 2007 - 2022: numerous others credited in AUTHORS.rst
 # Copyright 2022: https://github.com/yasirroni/
 
-from __future__ import print_function, absolute_import
+from __future__ import absolute_import, print_function
 
 import re
-import numpy as np
 
 from .utils import int_else_float_except_string
 
+
 def find_name(string):
-    return re.search('function\s*mpc\s*=\s*(?P<data>.*?)\n', string).groupdict()['data']
+    return re.search(
+        'function\\s*mpc\\s*=\\s*(?P<data>.*?)\n',
+        string).groupdict()['data']
+
 
 def find_attributes(string):
-    pattern = 'mpc\.(?P<attribute>.*?)\s*=\s*'
+    pattern = 'mpc\\.(?P<attribute>.*?)\\s*=\\s*'
     return re.findall(pattern, string, re.DOTALL)
+
 
 def parse_file(attribute, string):
     match = search_file(attribute, string)
@@ -30,8 +34,10 @@ def parse_file(attribute, string):
                 if attribute in ['version', 'bus_name', 'branch_name', 'gen_name']:
                     _list.append([line.strip().strip("'")])
                 else:
-                    _list.append([int_else_float_except_string(s) for s in line.strip().split()])
+                    _list.append([int_else_float_except_string(s)
+                                 for s in line.strip().split()])
         return _list
+
 
 def search_file(attribute, string):
     if attribute in ['gen', 'gencost', 'bus', 'branch']:

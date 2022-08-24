@@ -1,1 +1,1 @@
-from .core import CaseFrames
+from .core import CaseFrames  # noqa: F401

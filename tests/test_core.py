@@ -1,10 +1,11 @@
 
 import os
+
 import numpy as np
 import pytest
 
 from matpowercaseframes import CaseFrames
-from matpowercaseframes.idx import *
+from matpowercaseframes.idx import BUS_I, BUS_TYPE
 
 """
     pytest -n auto -rA --cov-report term --cov=matpowercaseframes tests/
@@ -14,11 +15,14 @@ CURDIR = os.path.realpath(os.path.dirname(__file__))
 CASE_NAME = 'case9.m'
 CASE_PATH = os.path.join(CURDIR, 'data', CASE_NAME)
 
+
 def test_input_str_path():
-    cf = CaseFrames(CASE_PATH)
+    CaseFrames(CASE_PATH)
+
 
 def test_input_str_matpower_case_name():
-    cf = CaseFrames(CASE_NAME)
+    CaseFrames(CASE_NAME)
+
 
 def test_input_oct2py_io_Struct():
     from matpower import start_instance
@@ -26,17 +30,19 @@ def test_input_oct2py_io_Struct():
 
     # before run
     mpc = m.loadcase('case9', verbose=False)
-    cf = CaseFrames(CASE_PATH)
+    CaseFrames(CASE_PATH)
 
     # after run
     mpc = m.runpf(mpc, verbose=False)
-    cf = CaseFrames(CASE_PATH)
+    CaseFrames(CASE_PATH)
 
     m.exit()
 
+
 def test_input_type_error():
-    with pytest.raises(TypeError) as e_info:
-        cf = CaseFrames(1)
+    with pytest.raises(TypeError):
+        CaseFrames(1)
+
 
 def test_read_value():
     cf = CaseFrames(CASE_PATH)
@@ -63,11 +69,12 @@ def test_read_value():
         [9, 1, 125, 50, 0, 0, 1, 1, 0, 345, 1, 1.1, 0.9]
     ])
     assert np.allclose(cf.bus, narr_bus)
-    assert np.allclose(cf.bus['BUS_I'], narr_bus[:,BUS_I])
-    assert np.allclose(cf.bus['BUS_TYPE'], narr_bus[:,BUS_TYPE])
+    assert np.allclose(cf.bus['BUS_I'], narr_bus[:, BUS_I])
+    assert np.allclose(cf.bus['BUS_TYPE'], narr_bus[:, BUS_TYPE])
 
     # TODO:
     # Check all data
+
 
 def test_read_case_name():
     cf = CaseFrames(CASE_PATH)
