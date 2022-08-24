@@ -7,6 +7,23 @@ on:
       - master
 
 jobs:
+  linters:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v3
+        with:
+          python-version: "3.10"
+          cache: 'pip'
+          cache-dependency-path: 'requirements-dev.txt'
+      - name: isort
+        uses: jamescurtin/isort-action@master
+      - name: flake8
+        uses: py-actions/flake8@v2
+        with:
+          max-line-length: "88"
+          ignore: "E741,F403,W503"
+
   build:
     strategy:
       matrix:
