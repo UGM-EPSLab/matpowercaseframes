@@ -30,7 +30,7 @@ jobs:
           pip install pytest pytest-ordering pytest-cov pytest-runner
       - name: Generate coverage report
         run: |
-          pytest -vvv --cov=./ --cov-report=xml:unit.coverage.xml
+          pytest -vvv -n auto --cov=matpowercaseframes --cov-report=xml:unit.coverage.xml
 
       # - name: Upload unit test coverage to Codecov
       #   uses: codecov/codecov-action@v1
