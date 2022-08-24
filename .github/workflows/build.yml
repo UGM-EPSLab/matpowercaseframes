@@ -14,6 +14,8 @@ jobs:
         platform: [octave]
         os: [ubuntu-latest]
 
+    runs-on: ${{matrix.os}}
+
     steps:
       - name: Clone this repository
         uses: actions/checkout@v3
