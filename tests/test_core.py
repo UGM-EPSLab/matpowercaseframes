@@ -30,11 +30,11 @@ def test_input_oct2py_io_Struct():
 
     # before run
     mpc = m.loadcase('case9', verbose=False)
-    CaseFrames(CASE_PATH)
+    CaseFrames(mpc)
 
     # after run
     mpc = m.runpf(mpc, verbose=False)
-    CaseFrames(CASE_PATH)
+    CaseFrames(mpc)
 
     m.exit()
 
