@@ -50,18 +50,18 @@ class CaseFrames:
         self.name = ''
 
         self._attributes = []
-        for attribute, _list in struct.items():
+        for attribute, list_ in struct.items():
             if attribute not in ATTRIBUTES:
                 # ? Should we support custom attributes?
                 continue
 
             if attribute == "version" or attribute == "baseMVA":
-                setattr(self, attribute, _list)
+                setattr(self, attribute, list_)
             elif attribute in ['bus_name', 'branch_name', 'gen_name']:
-                idx = pd.Index(_list, name=attribute)
+                idx = pd.Index(list_, name=attribute)
                 setattr(self, attribute, idx)
             else:
-                cols = _list.shape[1]
+                cols = list_.shape[1]
                 # NOTE: .get('key') instead of ['key'] to default range
                 columns = COLUMNS.get(attribute, [i for i in range(0, cols)])
                 columns = columns[:cols]
@@ -73,7 +73,7 @@ class CaseFrames:
                     columns = (columns[:-1]
                                + ["{}_{}".format(columns[-1], i)
                                   for i in range(cols - len(columns), -1, -1)])
-                df = pd.DataFrame(_list, columns=columns)
+                df = pd.DataFrame(list_, columns=columns)
                 setattr(self, attribute, df)
 
             self._attributes.append(attribute)
@@ -94,15 +94,15 @@ class CaseFrames:
                 continue
 
             # TODO: migrate using GridCal approach
-            _list = parse_file(attribute, string)
-            if _list is not None:
+            list_ = parse_file(attribute, string)
+            if list_ is not None:
                 if attribute == "version" or attribute == "baseMVA":
-                    setattr(self, attribute, _list[0][0])
+                    setattr(self, attribute, list_[0][0])
                 elif attribute in ['bus_name', 'branch_name', 'gen_name']:
-                    idx = pd.Index(_list, name=attribute)
+                    idx = pd.Index([name[0] for name in list_], name=attribute)
                     setattr(self, attribute, idx)
                 else:
-                    cols = max([len(l) for l in _list])
+                    cols = max([len(l) for l in list_])
                     # NOTE: .get('key') instead of ['key'] to default range
                     columns = COLUMNS.get(attribute, [i for i in range(0, cols)])
                     columns = columns[:cols]
@@ -114,7 +114,7 @@ class CaseFrames:
                         columns = (columns[:-1]
                                    + ["{}_{}".format(columns[-1], i)
                                       for i in range(cols - len(columns), -1, -1)])
-                    df = pd.DataFrame(_list, columns=columns)
+                    df = pd.DataFrame(list_, columns=columns)
 
                     setattr(self, attribute, df)
                 self._attributes.append(attribute)
