@@ -123,28 +123,42 @@ class CaseFrames:
         if 'bus_name' in self._attributes:
             self.bus.set_index(self.bus_name, drop=False, inplace=True)
         else:
-            self.bus.set_index(
-                pd.RangeIndex(
-                    1, len(
-                        self.bus.index) + 1, 1), drop=False, inplace=True)
+            self.bus.set_index(pd.RangeIndex(1, len(self.bus.index) + 1),
+                               drop=False, inplace=True)
 
         if 'branch_name' in self._attributes:
             self.branch.set_index(self.branch_name, drop=False, inplace=True)
         else:
-            self.branch.set_index(
-                pd.RangeIndex(
-                    1, len(
-                        self.branch.index) + 1, 1), drop=False, inplace=True)
+            self.branch.set_index(pd.RangeIndex(1, len(self.branch.index) + 1),
+                                  drop=False, inplace=True)
 
         if 'gen_name' in self._attributes:
             self.gen.set_index(self.gen_name, drop=False, inplace=True)
             self.gencost.set_index(self.gen_name, drop=False, inplace=True)
         else:
-            self.gen.set_index(
-                pd.RangeIndex(
-                    1, len(
-                        self.gen.index) + 1, 1), drop=False, inplace=True)
-            self.gencost.set_index(
-                pd.RangeIndex(
-                    1, len(
-                        self.gen.index) + 1, 1), drop=False, inplace=True)
+            self.gen.set_index(pd.RangeIndex(1, len(self.gen.index) + 1),
+                               drop=False, inplace=True)
+            self.gencost.set_index(pd.RangeIndex(1, len(self.gen.index) + 1),
+                                   drop=False, inplace=True)
+
+    def to_excel(self, path):
+        with pd.ExcelWriter(path) as writer:
+            pd.DataFrame(                
+                data={
+                    'INFO': {
+                        'version': getattr(self, 'version'),
+                        'baseMVA': getattr(self, 'baseMVA'),
+                    }
+                }
+            ).to_excel(writer, sheet_name='info')
+            for attribute in self._attributes:
+                if attribute == "version" or attribute == "baseMVA":
+                    # TODO: make self._attributes_non_pandas?
+                    continue
+                elif attribute in ['bus_name', 'branch_name', 'gen_name']:
+                    pd.DataFrame(data={
+                        attribute: getattr(self, attribute)
+                    }).to_excel(writer, sheet_name=attribute)
+                else:
+                    getattr(self, attribute).to_excel(writer,
+                                                      sheet_name=attribute)
