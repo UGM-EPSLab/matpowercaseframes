@@ -35,6 +35,17 @@ cf = CaseFrames(case_path)
 print(cf.gencost)
 ```
 
+To save all `DataFrame` to single `xlsx` file, use:
+
+```python
+from matpowercaseframes import CaseFrames
+
+case_path = 'case9.m'
+cf = CaseFrames(case_path)
+
+cf.to_excel('PATH/TO/DIR/case9.xlsx')
+```
+
 If you use `matpower[octave]`, `CaseFrames` also support `oct2py.io.Struct` as input using:
 
 ```python
