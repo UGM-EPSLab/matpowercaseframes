@@ -134,12 +134,19 @@ class CaseFrames:
 
         if 'gen_name' in self._attributes:
             self.gen.set_index(self.gen_name, drop=False, inplace=True)
-            self.gencost.set_index(self.gen_name, drop=False, inplace=True)
+            try:
+                self.gencost.set_index(self.gen_name, drop=False, inplace=True)
+            except AttributeError:
+                pass
         else:
             self.gen.set_index(pd.RangeIndex(1, len(self.gen.index) + 1),
                                drop=False, inplace=True)
-            self.gencost.set_index(pd.RangeIndex(1, len(self.gen.index) + 1),
+            try:
+                self.gencost.set_index(pd.RangeIndex(1, len(self.gen.index) + 1),
                                    drop=False, inplace=True)
+            except AttributeError:
+                pass
+
 
     def to_excel(self, path):
         with pd.ExcelWriter(path) as writer:

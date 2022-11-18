@@ -20,10 +20,6 @@ def test_input_str_path():
     CaseFrames(CASE_PATH)
 
 
-def test_input_str_matpower_case_name():
-    CaseFrames(CASE_NAME)
-
-
 def test_input_oct2py_io_Struct():
     from matpower import start_instance
     m = start_instance()
