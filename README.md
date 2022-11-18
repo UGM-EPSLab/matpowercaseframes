@@ -2,7 +2,7 @@
 
 Parse MATPOWER case into pandas DataFrame.
 
-Unlike the [tutorial](https://github.com/yasirroni/matpower-pip#extra-require-oct2py-or-matlabengine) on [`matpower-pip`](https://github.com/yasirroni/matpower-pip), this package support parsing MATPOWER case using `re` instead of `Oct2Py` and Octave. After that, you can further parse the data into any format supported by you solver.
+Unlike the [tutorial](https://github.com/yasirroni/matpower-pip#extra-require-oct2py-or-matlabengine) on [`matpower-pip`](https://github.com/yasirroni/matpower-pip), this package support parsing MATPOWER case using `re` instead of `Oct2Py` and Octave. After that, you can further parse the data into any format supported by your solver.
 
 ## Installation
 
@@ -35,7 +35,7 @@ cf = CaseFrames(case_path)
 print(cf.gencost)
 ```
 
-To save all `DataFrame` to single `xlsx` file, use:
+To save all `DataFrame` to a single `xlsx` file, use:
 
 ```python
 from matpowercaseframes import CaseFrames
@@ -67,8 +67,8 @@ print(cf.gencost)
 m.exit()
 ```
 
-## Acknowledgement
+## Acknowledgment
 
-This repository was supported by the [Faculty of Engineering, Universitas Gadjah Mada](https://ft.ugm.ac.id/en/) under the supervision of [Mr. Sarjiya](https://www.researchgate.net/profile/Sarjiya_Sarjiya). If you use this package for your research, we are very glad if you cite any relevant publication under Mr. Sarjiya's name as a thanks (but you are not responsible to). You can found his publications on the [semantic scholar](https://www.semanticscholar.org/author/Sarjiya/2267414) or [IEEE](https://ieeexplore.ieee.org/author/37548066400).
+This repository was supported by the [Faculty of Engineering, Universitas Gadjah Mada](https://ft.ugm.ac.id/en/) under the supervision of [Mr. Sarjiya](https://www.researchgate.net/profile/Sarjiya_Sarjiya). If you use this package for your research, we are very glad if you cite any relevant publication under Mr. Sarjiya's name as thanks (but you are not responsible to cite). You can find his publications in the [semantic](https://www.semanticscholar.org/author/Sarjiya/2267414) scholar](https://www.semanticscholar.org/author/Sarjiya/2267414) or [IEEE](https://ieeexplore.ieee.org/author/37548066400).
 
-This package is a a fork and simplification from [psst](https://github.com/ames-market/psst) MATPOWER parser, thus we greatly thanks psst developers and contributors.
+This package is a fork and simplification from [psst](https://github.com/ames-market/psst) MATPOWER parser, thus we greatly thank psst developers and contributors.
