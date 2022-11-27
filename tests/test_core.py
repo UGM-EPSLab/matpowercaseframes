@@ -4,11 +4,12 @@ import os
 import numpy as np
 import pytest
 
+import matpowercaseframes
 from matpowercaseframes import CaseFrames
 from matpowercaseframes.idx import BUS_I, BUS_TYPE
 
 """
-    pytest -n auto -rA --cov-report term --cov=matpowercaseframes tests/
+    pytest -n auto -rA --lf --cov-report term --cov=matpowercaseframes tests/
 """
 
 CURDIR = os.path.realpath(os.path.dirname(__file__))
