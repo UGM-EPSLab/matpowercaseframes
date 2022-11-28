@@ -12,9 +12,10 @@ from matpowercaseframes.idx import BUS_I, BUS_TYPE
     pytest -n auto -rA --lf --cov-report term --cov=matpowercaseframes tests/
 """
 
-CURDIR = os.path.realpath(os.path.dirname(__file__))
 CASE_NAME = 'case9.m'
-CASE_PATH = os.path.join(CURDIR, 'data', CASE_NAME)
+CURDIR = os.path.realpath(os.path.dirname(__file__))
+CASE_DIR = os.path.join(os.path.dirname(CURDIR), 'data')
+CASE_PATH = os.path.join(CASE_DIR, CASE_NAME)
 
 
 def test_input_str_path():
