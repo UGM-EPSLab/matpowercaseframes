@@ -33,7 +33,17 @@ COST_MODELS = {
     'POLYNOMIAL': 2
 }
 
-ATTRIBUTES = ('version', 'baseMVA', 'bus', 'branch', 'gen', 'gencost', 'bus_name')
+ATTRIBUTES = (
+    'version',
+    'baseMVA',
+    'bus',
+    'branch',
+    'gen',
+    'gencost',
+    'bus_name',
+    'branch_name',
+    'gen_name'
+)
 
 # TODO:
 # Support following attributes:
