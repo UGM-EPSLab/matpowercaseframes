@@ -1,6 +1,5 @@
 from matpower import path_matpower
 from matpowercaseframes import CaseFrames
-from matpowercaseframes.idx import BUS_I, BUS_TYPE
 
 """
     pytest -n auto -rA --cov-report term --cov=matpowercaseframes tests/

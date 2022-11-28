@@ -35,7 +35,11 @@ class CaseFrames:
             if not os.path.isfile(data):
                 # TYPE: str of matpower case name
                 if MATPOWER_EXIST:
-                    data = os.path.join(matpower.path_matpower, f"data/{data}")
+                    data_ = os.path.join(matpower.path_matpower, f"data/{data}")
+                    if os.path.isfile(data_):
+                        data = data_
+                    else:
+                        raise FileNotFoundError
             # TYPE: str of path
             self._read_matpower(filepath=data)
         elif isinstance(data, dict):
@@ -79,7 +83,7 @@ class CaseFrames:
                 elif attribute in ['bus_name', 'branch_name', 'gen_name']:
                     idx = pd.Index([name[0] for name in list_], name=attribute)
                     setattr(self, attribute, idx)
-                else:  # bus, branch, gen, gencost
+                else:  # bus, branch, gen, gencost, dcline, dclinecost
                     n_cols = max([len(l) for l in list_])
                     df = self._get_dataframe(attribute, list_, n_cols)
                     setattr(self, attribute, df)
@@ -100,7 +104,7 @@ class CaseFrames:
             elif attribute in ['bus_name', 'branch_name', 'gen_name']:
                 idx = pd.Index(list_, name=attribute)
                 setattr(self, attribute, idx)
-            else:  # bus, branch, gen, gencost
+            else:  # bus, branch, gen, gencost, dcline, dclinecost
                 n_cols = list_.shape[1]
                 df = self._get_dataframe(attribute, list_, n_cols)
                 setattr(self, attribute, df)
@@ -122,7 +126,7 @@ class CaseFrames:
             elif attribute in ['bus_name', 'branch_name', 'gen_name']:
                 idx = pd.Index(array[attribute].item(), name=attribute)
                 setattr(self, attribute, idx)
-            else:  # bus, branch, gen, gencost
+            else:  # bus, branch, gen, gencost, dcline, dclinecost
                 data = array[attribute].item()
                 n_cols = data.shape[1]
                 df = self._get_dataframe(attribute, data, n_cols)
@@ -136,13 +140,13 @@ class CaseFrames:
         columns = COLUMNS.get(attribute, [i for i in range(0, n_cols)])
         columns = columns[:n_cols]
         if n_cols > len(columns):
-            if attribute != "gencost":
+            if attribute != "gencost" and attribute != "dclinecost":
                 msg = (f"Number of columns in {attribute} ({n_cols}) are"
-                        f"greater than expected number.")
+                       f" greater than the expected number.")
                 raise IndexError(msg)
             columns = (columns[:-1]
-                        + ["{}_{}".format(columns[-1], i)
-                            for i in range(n_cols - len(columns), -1, -1)])
+                       + ["{}_{}".format(columns[-1], i)
+                          for i in range(n_cols - len(columns), -1, -1)])
         return pd.DataFrame(data, columns=columns)
 
     def _update_index(self):
