@@ -47,5 +47,8 @@ ATTRIBUTES = (
 
 # TODO:
 # Support following attributes:
-# dcline
-# ct
+# 'ct'
+# 'dcline',
+# 'userfcn',
+# 'if',
+# 'genfuel'

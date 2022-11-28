@@ -4,6 +4,7 @@
 
 import os
 
+import numpy as np
 import pandas as pd
 
 from .constants import ATTRIBUTES, COLUMNS
@@ -22,7 +23,7 @@ class CaseFrames:
 
         Args:
             data (str|dict):
-                str of path | str of matpower case name | dict | oct2py.io.Struct
+                str of path | str of matpower case name | dict | oct2py.io.Struct | structured NumPy array
             update_index (bool, optional):
                 Update index numbering if True. Defaults to True.
 
@@ -35,12 +36,23 @@ class CaseFrames:
                 # TYPE: str of matpower case name
                 if MATPOWER_EXIST:
                     data = os.path.join(matpower.path_matpower, f"data/{data}")
+            # TYPE: str of path
             self._read_matpower(filepath=data)
         elif isinstance(data, dict):
             # TYPE: dict | oct2py.io.Struct
-            self._read_struct(struct=data)
+            self._read_oct2py_struct(struct=data)
+        elif isinstance(data, np.ndarray):
+            # TYPE: structured NumPy array 
+            # TODO: also support from.mat file via scipy.io
+            if data.dtype.names is None:
+                message = f"Source is {type(data)} but not structured NumPy array."
+                raise TypeError(message)
+            self._read_numpy_struct(array=data)
         else:
-            message = "Source must be str path to .m file or oct2py.io.Struct or dict."
+            message = (
+                f"Not supported source with type {type(data)}."
+                f" data must be str path to .m file, or oct2py.io.Struct, dict, or structured NumPy array."
+            )
             raise TypeError(message)
 
         if update_index:
@@ -72,10 +84,9 @@ class CaseFrames:
                     df = self._get_dataframe(attribute, list_, n_cols)
                     setattr(self, attribute, df)
 
-                    setattr(self, attribute, df)
                 self._attributes.append(attribute)
 
-    def _read_struct(self, struct):
+    def _read_oct2py_struct(self, struct):
         self.name = ''
         self._attributes = []
 
@@ -97,6 +108,27 @@ class CaseFrames:
             self._attributes.append(attribute)
 
         return None
+
+    def _read_numpy_struct(self, array):
+        self.name = ''
+        self._attributes = []
+        for attribute in array.dtype.names:
+            if attribute not in ATTRIBUTES:
+                # ? Should we support custom attributes?
+                continue
+
+            if attribute == "version" or attribute == "baseMVA":
+                setattr(self, attribute, array[attribute].item().item())
+            elif attribute in ['bus_name', 'branch_name', 'gen_name']:
+                idx = pd.Index(array[attribute].item(), name=attribute)
+                setattr(self, attribute, idx)
+            else:  # bus, branch, gen, gencost
+                data = array[attribute].item()
+                n_cols = data.shape[1]
+                df = self._get_dataframe(attribute, data, n_cols)
+                setattr(self, attribute, df)
+
+            self._attributes.append(attribute)
 
     @staticmethod
     def _get_dataframe(attribute, data, n_cols):
