@@ -46,48 +46,14 @@ class CaseFrames:
         if update_index:
             self._update_index()
 
-    def _read_struct(self, struct):
-        self.name = ''
-
-        self._attributes = []
-        for attribute, list_ in struct.items():
-            if attribute not in ATTRIBUTES:
-                # ? Should we support custom attributes?
-                continue
-
-            if attribute == "version" or attribute == "baseMVA":
-                setattr(self, attribute, list_)
-            elif attribute in ['bus_name', 'branch_name', 'gen_name']:
-                idx = pd.Index(list_, name=attribute)
-                setattr(self, attribute, idx)
-            else:
-                cols = list_.shape[1]
-                # NOTE: .get('key') instead of ['key'] to default range
-                columns = COLUMNS.get(attribute, [i for i in range(0, cols)])
-                columns = columns[:cols]
-                if cols > len(columns):
-                    if attribute != "gencost":
-                        msg = (f"Number of columns in {attribute} ({cols}) are"
-                               f"greater than expected number.")
-                        raise IndexError(msg)
-                    columns = (columns[:-1]
-                               + ["{}_{}".format(columns[-1], i)
-                                  for i in range(cols - len(columns), -1, -1)])
-                df = pd.DataFrame(list_, columns=columns)
-                setattr(self, attribute, df)
-
-            self._attributes.append(attribute)
-
-        return None
-
     def _read_matpower(self, filepath):
-        # ! Old ttribute is not guaranted to be replaced in re-read
+        # ! Old attribute is not guaranted to be replaced in re-read
         with open(filepath) as f:
             string = f.read()
 
         self.name = find_name(string)
-
         self._attributes = []
+
         for attribute in find_attributes(string):
             if attribute not in ATTRIBUTES:
                 # ? Should we support custom attributes?
@@ -101,23 +67,51 @@ class CaseFrames:
                 elif attribute in ['bus_name', 'branch_name', 'gen_name']:
                     idx = pd.Index([name[0] for name in list_], name=attribute)
                     setattr(self, attribute, idx)
-                else:
-                    cols = max([len(l) for l in list_])
-                    # NOTE: .get('key') instead of ['key'] to default range
-                    columns = COLUMNS.get(attribute, [i for i in range(0, cols)])
-                    columns = columns[:cols]
-                    if cols > len(columns):
-                        if attribute != "gencost":
-                            msg = (f"Number of columns in {attribute} ({cols}) are"
-                                   f"greater than expected number.")
-                            raise IndexError(msg)
-                        columns = (columns[:-1]
-                                   + ["{}_{}".format(columns[-1], i)
-                                      for i in range(cols - len(columns), -1, -1)])
-                    df = pd.DataFrame(list_, columns=columns)
+                else:  # bus, branch, gen, gencost
+                    n_cols = max([len(l) for l in list_])
+                    df = self._get_dataframe(attribute, list_, n_cols)
+                    setattr(self, attribute, df)
 
                     setattr(self, attribute, df)
                 self._attributes.append(attribute)
+
+    def _read_struct(self, struct):
+        self.name = ''
+        self._attributes = []
+
+        for attribute, list_ in struct.items():
+            if attribute not in ATTRIBUTES:
+                # ? Should we support custom attributes?
+                continue
+
+            if attribute == "version" or attribute == "baseMVA":
+                setattr(self, attribute, list_)
+            elif attribute in ['bus_name', 'branch_name', 'gen_name']:
+                idx = pd.Index(list_, name=attribute)
+                setattr(self, attribute, idx)
+            else:  # bus, branch, gen, gencost
+                n_cols = list_.shape[1]
+                df = self._get_dataframe(attribute, list_, n_cols)
+                setattr(self, attribute, df)
+
+            self._attributes.append(attribute)
+
+        return None
+
+    @staticmethod
+    def _get_dataframe(attribute, data, n_cols):
+        # NOTE: .get('key') instead of ['key'] to default range
+        columns = COLUMNS.get(attribute, [i for i in range(0, n_cols)])
+        columns = columns[:n_cols]
+        if n_cols > len(columns):
+            if attribute != "gencost":
+                msg = (f"Number of columns in {attribute} ({n_cols}) are"
+                        f"greater than expected number.")
+                raise IndexError(msg)
+            columns = (columns[:-1]
+                        + ["{}_{}".format(columns[-1], i)
+                            for i in range(n_cols - len(columns), -1, -1)])
+        return pd.DataFrame(data, columns=columns)
 
     def _update_index(self):
         if 'bus_name' in self._attributes:
@@ -146,7 +140,6 @@ class CaseFrames:
                                    drop=False, inplace=True)
             except AttributeError:
                 pass
-
 
     def to_excel(self, path):
         with pd.ExcelWriter(path) as writer:
