@@ -30,6 +30,7 @@ class CaseFrames:
         Raises:
             TypeError: Error input data invalid.
         """
+        # TODO: support read excel
         if isinstance(data, str):
             # TYPE: str of path | str of matpower case name
             if not os.path.isfile(data):
@@ -182,6 +183,15 @@ class CaseFrames:
                 pass
 
     def to_excel(self, path):
+        """
+        Save CaseFrames in single xlsx file
+
+        Parameters
+        ----------
+        path : str
+            String of path containing an extension of .xlsx. The directory where the
+            file is going to be written must exists.
+        """
         with pd.ExcelWriter(path) as writer:
             pd.DataFrame(                
                 data={
@@ -200,5 +210,34 @@ class CaseFrames:
                         attribute: getattr(self, attribute)
                     }).to_excel(writer, sheet_name=attribute)
                 else:
-                    getattr(self, attribute).to_excel(writer,
-                                                      sheet_name=attribute)
+                    getattr(self, attribute).to_excel(writer, sheet_name=attribute)
+
+    def to_csv(self, path):
+        """
+        Save CaseFrames into multiple csv files
+
+        Parameters
+        ----------
+        path : str
+            String of path to directory where multiple csv files will be written.
+            The directory where the files is going to be written must exists.
+        """
+        pd.DataFrame(                
+            data={
+                'INFO': {
+                    'version': getattr(self, 'version'),
+                    'baseMVA': getattr(self, 'baseMVA'),
+                }
+            }
+        ).to_csv(os.path.join(path, "info.csv"))
+
+        for attribute in self._attributes:
+            if attribute == "version" or attribute == "baseMVA":
+                # TODO: make self._attributes_non_pandas?
+                continue
+            elif attribute in ['bus_name', 'branch_name', 'gen_name']:
+                pd.DataFrame(data={
+                    attribute: getattr(self, attribute)
+                }).to_csv(os.path.join(path, f"{attribute}.csv"))
+            else:
+                getattr(self, attribute).to_csv(os.path.join(path, f"{attribute}.csv"))

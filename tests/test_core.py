@@ -9,7 +9,7 @@ from matpowercaseframes import CaseFrames
 from matpowercaseframes.idx import BUS_I, BUS_TYPE
 
 """
-    pytest -n auto -rA --lf --cov-report term --cov=matpowercaseframes tests/
+    pytest -n auto -rA --lf -c pyproject.toml --cov-report term-missing --cov=matpowercaseframes tests/
 """
 
 CASE_NAME = 'case9.m'
@@ -90,3 +90,13 @@ def test_get_attributes():
     # cf.attributes[0] = 'try'
     # print(cf.attributes[0])
     # print(cf.attributes)
+
+
+def test_to_xlsx():
+    cf = CaseFrames(CASE_PATH)
+    cf.to_excel('tests/results/test_to_xlsx.xlsx')
+
+
+def test_to_csv():
+    cf = CaseFrames(CASE_PATH)
+    cf.to_csv('tests/results')
