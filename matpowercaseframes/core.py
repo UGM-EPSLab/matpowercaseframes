@@ -149,6 +149,10 @@ class CaseFrames:
                           for i in range(n_cols - len(columns), -1, -1)])
         return pd.DataFrame(data, columns=columns)
 
+    @property
+    def attributes(self):
+        return self._attributes
+
     def _update_index(self):
         if 'bus_name' in self._attributes:
             self.bus.set_index(self.bus_name, drop=False, inplace=True)

@@ -77,3 +77,16 @@ def test_read_value():
 def test_read_case_name():
     cf = CaseFrames(CASE_PATH)
     assert cf.name == 'case9'
+
+
+def test_get_attributes():
+    cf = CaseFrames(CASE_PATH)
+    assert cf.attributes == ['version', 'baseMVA', 'bus', 'gen', 'branch', 'gencost']
+
+    with pytest.raises(AttributeError):
+        cf.attributes = ['try', 'replacing', 'attributes']
+
+    # TODO: protect from attributes changed by user
+    # cf.attributes[0] = 'try'
+    # print(cf.attributes[0])
+    # print(cf.attributes)
