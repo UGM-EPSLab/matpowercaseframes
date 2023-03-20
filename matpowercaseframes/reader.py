@@ -26,7 +26,7 @@ def parse_file(attribute, string):
     if match is None:
         return None
     else:
-        _list = list()
+        _list = []
         for line in match.splitlines():
             line = line.split('%')[0]
             line = line.replace(';', '')
@@ -40,7 +40,7 @@ def parse_file(attribute, string):
 
 
 def search_file(attribute, string):
-    if attribute in ['gen', 'gencost', 'bus', 'branch']:
+    if attribute in ['gen', 'gencost', 'bus', 'branch', 'dcline', 'dclinecost']:
         pattern = r'mpc\.{}\s*=\s*\[[\n]?(?P<data>.*?)[\n]?\];'.format(attribute)
     elif attribute in ['version', 'baseMVA']:
         pattern = r'mpc\.{}\s*=\s*(?P<data>.*?);'.format(attribute)

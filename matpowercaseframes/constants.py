@@ -15,7 +15,19 @@ COLUMNS = {
         'RATE_C', 'TAP', 'SHIFT', 'BR_STATUS', 'ANGMIN', 'ANGMAX', 'PF', 'QF',
         'PT', 'QT', 'MU_SF', 'MU_ST', 'MU_ANGMIN', 'MU_ANGMAX'
     ],
+    'dcline': [
+        'F_BUS', 'T_BUS', 'BR_STATUS', 'PF', 'PT', 'QF', 'QT', 'VF',
+        'VT', 'PMIN', 'PMAX', 'QMINF', 'QMAXF', 'QMINT', 'QMAXT', 'LOSS0',
+        'LOSS1', 'MU_PMIN', 'MU_PMAX', 'MU_QMINF', 'MU_QMAXF', 'MU_QMINT',
+        'MU_QMAXT',
+    ],
+    'if': {
+        # negative 'BRANCHIDX' defines opposite direction
+        'map': ['IFNUM', 'BRANCHIDX'],
+        'lims': ['IFNUM', 'LOWER', 'UPPER']
+    },
     'gencost': ['MODEL', 'STARTUP', 'SHUTDOWN', 'NCOST', 'COST'],
+    'dclinecost': ['MODEL', 'STARTUP', 'SHUTDOWN', 'NCOST', 'COST'],
     'bus_name': ['BUS_NAME'],
     'branch_name': ['BRANCH_NAME'],
     'gen_name': ['GEN_NAME']
@@ -33,9 +45,27 @@ COST_MODELS = {
     'POLYNOMIAL': 2
 }
 
-ATTRIBUTES = ('version', 'baseMVA', 'bus', 'branch', 'gen', 'gencost', 'bus_name')
+ATTRIBUTES = (
+    'version',
+    'baseMVA',
+    'bus',
+    'branch',
+    'gen',
+    'gencost',
+    'bus_name',
+    'branch_name',
+    'gen_name',
+    'dcline',
+    'dclinecost',
+)
 
 # TODO:
 # Support following attributes:
-# dcline
-# ct
+# 'ct'
+# 'userfcn',
+# 'genfuel'
+# 'gentype'
+# reserves.zones
+# reserves.req
+# reserves.cost
+# reserves.qty

@@ -8,20 +8,17 @@ from matpowercaseframes import CaseFrames
 from matpowercaseframes.idx import BUS_I, BUS_TYPE
 
 """
-    pytest -n auto -rA --cov-report term --cov=matpowercaseframes tests/
+    pytest -n auto -rA --lf -c pyproject.toml --cov-report term-missing --cov=matpowercaseframes tests/
 """
 
-CURDIR = os.path.realpath(os.path.dirname(__file__))
 CASE_NAME = 'case9.m'
-CASE_PATH = os.path.join(CURDIR, 'data', CASE_NAME)
+CURDIR = os.path.realpath(os.path.dirname(__file__))
+CASE_DIR = os.path.join(os.path.dirname(CURDIR), 'data')
+CASE_PATH = os.path.join(CASE_DIR, CASE_NAME)
 
 
 def test_input_str_path():
     CaseFrames(CASE_PATH)
-
-
-def test_input_str_matpower_case_name():
-    CaseFrames(CASE_NAME)
 
 
 def test_input_oct2py_io_Struct():
@@ -53,7 +50,7 @@ def test_read_value():
     narr_gencost = np.array([
         [2.000e+00, 1.500e+03, 0.000e+00, 3.000e+00, 1.100e-01, 5.000e+00, 1.500e+02],
         [2.000e+00, 2.000e+03, 0.000e+00, 3.000e+00, 8.500e-02, 1.200e+00, 6.000e+02],
-        [2.000e+00, 3.000e+03, 0.000e+00, 3.000e+00, 1.225e-01, 1.000e+00, 3.350e+02]
+        [2.000e+00, 3.000e+03, 0.000e+00, 3.000e+00, 1.225e-01, 1.000e+00, 3.350e+02],
     ])
     assert np.allclose(cf.gencost, narr_gencost)
 
@@ -79,3 +76,26 @@ def test_read_value():
 def test_read_case_name():
     cf = CaseFrames(CASE_PATH)
     assert cf.name == 'case9'
+
+
+def test_get_attributes():
+    cf = CaseFrames(CASE_PATH)
+    assert cf.attributes == ['version', 'baseMVA', 'bus', 'gen', 'branch', 'gencost']
+
+    with pytest.raises(AttributeError):
+        cf.attributes = ['try', 'replacing', 'attributes']
+
+    # TODO: protect from attributes changed by user
+    # cf.attributes[0] = 'try'
+    # print(cf.attributes[0])
+    # print(cf.attributes)
+
+
+def test_to_xlsx():
+    cf = CaseFrames(CASE_PATH)
+    cf.to_excel('tests/results/test_to_xlsx.xlsx')
+
+
+def test_to_csv():
+    cf = CaseFrames(CASE_PATH)
+    cf.to_csv('tests/results')
