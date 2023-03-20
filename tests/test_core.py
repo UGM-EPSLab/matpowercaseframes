@@ -4,7 +4,6 @@ import os
 import numpy as np
 import pytest
 
-import matpowercaseframes
 from matpowercaseframes import CaseFrames
 from matpowercaseframes.idx import BUS_I, BUS_TYPE
 
@@ -51,7 +50,7 @@ def test_read_value():
     narr_gencost = np.array([
         [2.000e+00, 1.500e+03, 0.000e+00, 3.000e+00, 1.100e-01, 5.000e+00, 1.500e+02],
         [2.000e+00, 2.000e+03, 0.000e+00, 3.000e+00, 8.500e-02, 1.200e+00, 6.000e+02],
-        [2.000e+00, 3.000e+03, 0.000e+00, 3.000e+00, 1.225e-01, 1.000e+00, 3.350e+02]
+        [2.000e+00, 3.000e+03, 0.000e+00, 3.000e+00, 1.225e-01, 1.000e+00, 3.350e+02],
     ])
     assert np.allclose(cf.gencost, narr_gencost)
 

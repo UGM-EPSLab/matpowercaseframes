@@ -22,7 +22,8 @@ COLUMNS = {
         'MU_QMAXT',
     ],
     'if': {
-        'map': ['IFNUM', 'BRANCHIDX'],  # negative 'BRANCHIDX' defines opposite direction
+        # negative 'BRANCHIDX' defines opposite direction
+        'map': ['IFNUM', 'BRANCHIDX'],
         'lims': ['IFNUM', 'LOWER', 'UPPER']
     },
     'gencost': ['MODEL', 'STARTUP', 'SHUTDOWN', 'NCOST', 'COST'],

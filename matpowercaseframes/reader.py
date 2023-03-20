@@ -26,7 +26,7 @@ def parse_file(attribute, string):
     if match is None:
         return None
     else:
-        _list = list()
+        _list = []
         for line in match.splitlines():
             line = line.split('%')[0]
             line = line.replace(';', '')

@@ -23,7 +23,8 @@ class CaseFrames:
 
         Args:
             data (str|dict):
-                str of path | str of matpower case name | dict | oct2py.io.Struct | structured NumPy array
+                str of path | str of matpower case name | dict | oct2py.io.Struct |
+                structured NumPy array
             update_index (bool, optional):
                 Update index numbering if True. Defaults to True.
 
@@ -47,7 +48,7 @@ class CaseFrames:
             # TYPE: dict | oct2py.io.Struct
             self._read_oct2py_struct(struct=data)
         elif isinstance(data, np.ndarray):
-            # TYPE: structured NumPy array 
+            # TYPE: structured NumPy array
             # TODO: also support from.mat file via scipy.io
             if data.dtype.names is None:
                 message = f"Source is {type(data)} but not structured NumPy array."
@@ -55,8 +56,8 @@ class CaseFrames:
             self._read_numpy_struct(array=data)
         else:
             message = (
-                f"Not supported source with type {type(data)}."
-                f" data must be str path to .m file, or oct2py.io.Struct, dict, or structured NumPy array."
+                f"Not supported source with type {type(data)}. Data must be str path to"
+                f" .m file, or oct2py.io.Struct, dict, or structured NumPy array."
             )
             raise TypeError(message)
 
@@ -138,7 +139,7 @@ class CaseFrames:
     @staticmethod
     def _get_dataframe(attribute, data, n_cols):
         # NOTE: .get('key') instead of ['key'] to default range
-        columns = COLUMNS.get(attribute, [i for i in range(0, n_cols)])
+        columns = COLUMNS.get(attribute, list(range(0, n_cols)))
         columns = columns[:n_cols]
         if n_cols > len(columns):
             if attribute != "gencost" and attribute != "dclinecost":
@@ -178,7 +179,7 @@ class CaseFrames:
                                drop=False, inplace=True)
             try:
                 self.gencost.set_index(pd.RangeIndex(1, len(self.gen.index) + 1),
-                                   drop=False, inplace=True)
+                                       drop=False, inplace=True)
             except AttributeError:
                 pass
 
@@ -193,11 +194,11 @@ class CaseFrames:
             file is going to be written must exists.
         """
         with pd.ExcelWriter(path) as writer:
-            pd.DataFrame(                
+            pd.DataFrame(
                 data={
                     'INFO': {
-                        'version': getattr(self, 'version'),
-                        'baseMVA': getattr(self, 'baseMVA'),
+                        'version': getattr(self, 'version', None),
+                        'baseMVA': getattr(self, 'baseMVA', None),
                     }
                 }
             ).to_excel(writer, sheet_name='info')
@@ -222,11 +223,11 @@ class CaseFrames:
             String of path to directory where multiple csv files will be written.
             The directory where the files is going to be written must exists.
         """
-        pd.DataFrame(                
+        pd.DataFrame(
             data={
                 'INFO': {
-                    'version': getattr(self, 'version'),
-                    'baseMVA': getattr(self, 'baseMVA'),
+                    'version': getattr(self, 'version', None),
+                    'baseMVA': getattr(self, 'baseMVA', None),
                 }
             }
         ).to_csv(os.path.join(path, "info.csv"))
