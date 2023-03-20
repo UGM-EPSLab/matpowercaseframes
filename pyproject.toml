@@ -23,7 +23,7 @@ classifiers = [
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Topic :: Scientific/Engineering",
-  "Topic :: Scientific Engineering :: Mathematics",
+  "Topic :: Scientific/Engineering :: Mathematics",
   "License :: OSI Approved :: MIT License",
   "Natural Language :: English",
 ]
