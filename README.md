@@ -2,7 +2,7 @@
 
 Parse MATPOWER case into pandas DataFrame.
 
-Unlike the [tutorial](https://github.com/yasirroni/matpower-pip#extra-require-oct2py-or-matlabengine) on [`matpower-pip`](https://github.com/yasirroni/matpower-pip), this package support parsing MATPOWER case using `re` instead of `Oct2Py` and Octave. After that, you can further parse the data into any format supported by your solver.
+Unlike the [tutorial](https://github.com/yasirroni/matpower-pip#extra-require-oct2py-or-matlabengine) on [`matpower-pip`](https://github.com/yasirroni/matpower-pip), this package supports parsing MATPOWER case using `re` instead of `Oct2Py` and Octave. After that, you can further parse the data into any format supported by your solver.
 
 ## Installation
 
@@ -11,6 +11,8 @@ pip install matpowercaseframes
 ```
 
 ## Usage
+
+The main utility of `matpowercaseframes` is to help read `matpower` data in user-friendly format as follows,
 
 ```python
 from matpowercaseframes import CaseFrames
@@ -21,7 +23,7 @@ cf = CaseFrames(case_path)
 print(cf.gencost)
 ```
 
-If you have `matpower` installed via `pip install matpower` (did not require `matpower[octave]`), you can easily navigate MATPOWER case using:
+If you have `matpower` installed via `pip install matpower` (did not require `matpower[octave]`), you can easily navigate `matpower` case using:
 
 ```python
 import os
@@ -33,6 +35,19 @@ case_path = os.path.join(path_matpower, 'data', case_name)
 cf = CaseFrames(case_path)
 
 print(cf.gencost)
+```
+
+Furthermore, `matpowercaseframes` also support generating data that is acceptable by `matpower` via `matpower-pip` package (require `matlab` or `octave`),
+
+```python
+from matpowercaseframes import CaseFrames
+
+case_path = 'case9.m'
+cf = CaseFrames(case_path)
+mpc = cf.to_dict()
+
+m = start_instance()
+m.runpf(mpc)
 ```
 
 To save all `DataFrame` to a single `xlsx` file, use:
