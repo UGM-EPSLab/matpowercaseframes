@@ -99,3 +99,7 @@ def test_to_xlsx():
 def test_to_csv():
     cf = CaseFrames(CASE_PATH)
     cf.to_csv('tests/results')
+
+def test_to_dict():
+    cf = CaseFrames(CASE_PATH)
+    dict_object = cf.to_dict()

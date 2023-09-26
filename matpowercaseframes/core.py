@@ -242,3 +242,20 @@ class CaseFrames:
                 }).to_csv(os.path.join(path, f"{attribute}.csv"))
             else:
                 getattr(self, attribute).to_csv(os.path.join(path, f"{attribute}.csv"))
+
+    def to_dict(self):
+        """
+        Convert CaseFrames into dictionary
+
+        The value of the data will be in str, numeric, and list.
+        """
+        data = {
+            'version': getattr(self, 'version', None),
+            'baseMVA': getattr(self, 'baseMVA', None),
+        }
+        for attribute in self._attributes:
+            if attribute == "version" or attribute == "baseMVA":
+                data[attribute] = getattr(self, attribute)
+            else:
+                data[attribute] = getattr(self, attribute).values.tolist()
+        return data
