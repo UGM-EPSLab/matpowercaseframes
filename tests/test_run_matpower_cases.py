@@ -1,4 +1,3 @@
-from matpower import path_matpower
 from matpower import start_instance
 
 from matpowercaseframes import CaseFrames
@@ -9,7 +8,7 @@ from matpowercaseframes import CaseFrames
 
 
 def test_case9():
-    CASE_NAME = 'case9.m'
+    CASE_NAME = "case9.m"
     cf = CaseFrames(CASE_NAME)
     mpc = cf.to_dict()
 
