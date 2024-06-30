@@ -37,6 +37,19 @@ cf = CaseFrames(case_path)
 print(cf.gencost)
 ```
 
+Since `matpower` itself suggests that we should use `loadcase` instead of parsing, we can use an engine using (require `matlab` or `octave`),
+
+```python
+from matpower import start_instance
+from matpowercaseframes import CaseFrames
+
+m = start_instance()
+
+case_name = f"case16am.m"
+cf_16am_lc = CaseFrames(case_name, load_case_engine=m)
+cf_16am_lc.branch  # see that the branch is already in p.u., converted by `loadcase`
+```
+
 Furthermore, `matpowercaseframes` also support generating data that is acceptable by `matpower` via `matpower-pip` package (require `matlab` or `octave`),
 
 ```python
@@ -44,7 +57,7 @@ from matpowercaseframes import CaseFrames
 
 case_path = 'case9.m'
 cf = CaseFrames(case_path)
-mpc = cf.to_dict()
+mpc = cf.to_mpc()  # identical with cf.to_dict()
 
 m = start_instance()
 m.runpf(mpc)
