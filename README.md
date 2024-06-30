@@ -84,6 +84,34 @@ m.exit()
 
 ## Acknowledgment
 
-This repository was supported by the [Faculty of Engineering, Universitas Gadjah Mada](https://ft.ugm.ac.id/en/) under the supervision of [Mr. Sarjiya](https://www.researchgate.net/profile/Sarjiya_Sarjiya). If you use this package for your research, we are very glad if you cite any relevant publication under Mr. Sarjiya's name as thanks (but you are not responsible to cite). You can find his publications in the [semantic](https://www.semanticscholar.org/author/Sarjiya/2267414) scholar](https://www.semanticscholar.org/author/Sarjiya/2267414) or [IEEE](https://ieeexplore.ieee.org/author/37548066400).
+1. This repository was supported by the [Faculty of Engineering, Universitas Gadjah Mada](https://ft.ugm.ac.id/en/) under the supervision of [Mr. Sarjiya](https://www.researchgate.net/profile/Sarjiya_Sarjiya). If you use this package for your research, we would be very glad if you cited any relevant publication under Mr. Sarjiya's name as thanks (but you are not responsible for citing). You can find his publications in the [Semantic Scholar](https://www.semanticscholar.org/author/Sarjiya/2267414) or [IEEE](https://ieeexplore.ieee.org/author/37548066400).
 
-This package is a fork and simplification from [psst](https://github.com/ames-market/psst) MATPOWER parser, thus we greatly thank psst developers and contributors.
+1. This repository is working flawlessly with [matpower-pip](https://github.com/yasirroni/matpower-pip). If you use matpower-pip, make sure to cite using the below citation:
+
+    > M. Yasirroni, Sarjiya, and L. M. Putranto, "matpower-pip: A Python Package for Easy Access to MATPOWER Power System Simulation Package," [Online]. Available: <https://github.com/yasirroni/matpower-pip>.
+    >
+    > M. Yasirroni, Sarjiya, and L. M. Putranto, "matpower-pip". Zenodo, Jun. 13, 2024. doi: 10.5281/zenodo.11626845.
+
+    ```bib
+    @misc{matpower-pip,
+      author       = {Yasirroni, M. and Sarjiya and Putranto, L. M.},
+      title        = {matpower-pip: A Python Package for Easy Access to MATPOWER Power System Simulation Package},
+      year         = {2023},
+      howpublished = {\url{https://github.com/yasirroni/matpower-pip}},
+    }
+
+    @software{yasirroni_2024_11626845,
+      author       = {Yasirroni, Muhammad and
+                        Sarjiya, Sarjiya and
+                        Putranto, Lesnanto Multa},
+      title        = {matpower-pip},
+      month        = jun,
+      year         = 2024,
+      publisher    = {Zenodo},
+      version      = {8.0.0.2.1.8},
+      doi          = {10.5281/zenodo.11626845},
+      url          = {\url{https://doi.org/10.5281/zenodo.11626845}},
+    }
+    ```
+
+1. This package is a fork and simplification from [psst](https://github.com/ames-market/psst) MATPOWER parser, thus we greatly thank psst developers and contributors.
