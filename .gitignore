@@ -1,3 +1,6 @@
+# Octave
+octave-workspace
+
 # Local
 tests/results/*.xlsx
 

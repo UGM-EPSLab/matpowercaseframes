@@ -3,8 +3,8 @@ numpy>=1.21.5
 
 openpyxl>=3.1.2
 
-oct2py>=5.5.1
-matpower>=7.1.0.2.1.4
+oct2py>=5.7.0
+matpower>=7.1.0.2.1.8
 
 pytest
 pytest-cov

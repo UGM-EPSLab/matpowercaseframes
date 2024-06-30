@@ -1,4 +1,4 @@
-from matpower import path_matpower
+from matpower import path_matpower, start_instance
 
 from matpowercaseframes import CaseFrames
 
@@ -25,3 +25,20 @@ def test_case118():
 def test_t_case9_dcline():
     CASE_NAME = f"{path_matpower}/lib/t/t_case9_dcline.m"
     CaseFrames(CASE_NAME)
+
+
+def test_loadcase_case16am():
+    m = start_instance()
+    CASE_NAME = f"case16am.m"
+    mpc = m.loadcase(CASE_NAME)
+    CaseFrames(mpc)
+    m.exit()
+
+def test_read_without_ext():
+    CASE_NAME = 'case9'
+    cf = CaseFrames(CASE_NAME)
+
+    CASE_NAME = 'case9.m'
+    cf_ext = CaseFrames(CASE_NAME)
+
+    assert True
