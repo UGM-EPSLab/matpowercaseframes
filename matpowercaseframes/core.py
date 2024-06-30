@@ -32,18 +32,11 @@ class CaseFrames:
             TypeError: Error input data invalid.
         """
         # TODO: support read excel
+        # TODO: support Path object
         if isinstance(data, str):
-            # TYPE: str of path | str of matpower case name
-            if not os.path.isfile(data):
-                # TYPE: str of matpower case name
-                if MATPOWER_EXIST:
-                    data_ = os.path.join(matpower.path_matpower, f"data/{data}")
-                    if os.path.isfile(data_):
-                        data = data_
-                    else:
-                        raise FileNotFoundError
+            path = self._get_path(data)
             # TYPE: str of path
-            self._read_matpower(filepath=data)
+            self._read_matpower(filepath=path)
         elif isinstance(data, dict):
             # TYPE: dict | oct2py.io.Struct
             self._read_oct2py_struct(struct=data)
@@ -63,6 +56,30 @@ class CaseFrames:
 
         if update_index:
             self._update_index()
+
+    @staticmethod
+    def _get_path(path):
+        # TYPE: str of path | str of matpower case name
+        if os.path.isfile(path):
+            return path
+
+        path_added_m = path + '.m'
+        if os.path.isfile(path_added_m):
+            return path_added_m
+
+        # TYPE: str of matpower case name
+        if MATPOWER_EXIST:
+            path_added_matpower = os.path.join(matpower.path_matpower, f"data/{path}")
+            if os.path.isfile(path_added_matpower):
+                return path_added_matpower
+
+            path_added_matpower_m = os.path.join(
+                matpower.path_matpower, f"data/{path_added_m}"
+            )
+            if os.path.isfile(path_added_matpower_m):
+                return path_added_matpower_m
+
+        raise FileNotFoundError
 
     def _read_matpower(self, filepath):
         # ! Old attribute is not guaranted to be replaced in re-read
@@ -259,3 +276,11 @@ class CaseFrames:
             else:
                 data[attribute] = getattr(self, attribute).values.tolist()
         return data
+
+    def to_mpc(self):
+        """
+        Convert CaseFrames into matpower-compatible data, that is dictionary
+
+        The value of the data will be in str, numeric, and list.
+        """
+        return self.to_dict()
