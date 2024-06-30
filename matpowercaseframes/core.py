@@ -18,7 +18,7 @@ except ImportError:
 
 
 class CaseFrames:
-    def __init__(self, data, update_index=True):
+    def __init__(self, data, update_index=True, load_case_engine=None):
         """Convert data into CaseFrames format
 
         Args:
@@ -34,9 +34,17 @@ class CaseFrames:
         # TODO: support read excel
         # TODO: support Path object
         if isinstance(data, str):
-            path = self._get_path(data)
             # TYPE: str of path
-            self._read_matpower(filepath=path)
+            path = self._get_path(data)
+
+            if load_case_engine is None:
+                # read with matpower parser
+                self._read_matpower(filepath=path)
+            else:
+                # read using loadcase
+                mpc = load_case_engine.loadcase(path)
+                self._read_oct2py_struct(struct=mpc)
+
         elif isinstance(data, dict):
             # TYPE: dict | oct2py.io.Struct
             self._read_oct2py_struct(struct=data)
