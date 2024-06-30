@@ -3,44 +3,22 @@ default_stages: [commit]
 repos:
   # check yaml and end of file fixer
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0
+    rev: v4.6.0
     hooks:
       - id: check-yaml
       - id: end-of-file-fixer
         exclude: LICENSE
 
-  # remove unused import and variable using autoflake
-  - repo: https://github.com/PyCQA/autoflake
-    rev: v1.4
+  # autofix using ruff
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    # Ruff version.
+    rev: v0.5.0
     hooks:
-      - id: autoflake
-        args: [
-          '--in-place',
-          '--remove-all-unused-imports',
-          '--ignore-init-module-imports',
-          '--remove-unused-variables',
-          '--'
-        ]
-
-  # sort import using isort
-  - repo: https://github.com/pycqa/isort
-    rev: 5.12.0
-    hooks:
-      - id: isort
-        args: [
-        '--treat-comment-as-code',
-        '"# %%"',
-        '--'
-        ]
-
-  # autofix using autopep8
-  - repo: https://github.com/pre-commit/mirrors-autopep8
-    rev: v2.0.2
-    hooks:
-      - id: autopep8
-
-  # checkstyle using ruff
-  - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: 'v0.0.254'
-    hooks:
+      # Run the linter.
       - id: ruff
+        types_or: [ python, pyi, jupyter ]
+        args: [ --fix ]
+      # Run the formatter.
+      - id: ruff-format
+        types_or: [ python, pyi, jupyter ]
+        # args: [ --verbose ]

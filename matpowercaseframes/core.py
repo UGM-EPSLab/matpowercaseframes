@@ -12,6 +12,7 @@ from .reader import find_attributes, find_name, parse_file
 
 try:
     import matpower
+
     MATPOWER_EXIST = True
 except ImportError:
     MATPOWER_EXIST = False
@@ -71,7 +72,7 @@ class CaseFrames:
         if os.path.isfile(path):
             return path
 
-        path_added_m = path + '.m'
+        path_added_m = path + ".m"
         if os.path.isfile(path_added_m):
             return path_added_m
 
@@ -107,7 +108,7 @@ class CaseFrames:
             if list_ is not None:
                 if attribute == "version" or attribute == "baseMVA":
                     setattr(self, attribute, list_[0][0])
-                elif attribute in ['bus_name', 'branch_name', 'gen_name']:
+                elif attribute in ["bus_name", "branch_name", "gen_name"]:
                     idx = pd.Index([name[0] for name in list_], name=attribute)
                     setattr(self, attribute, idx)
                 else:  # bus, branch, gen, gencost, dcline, dclinecost
@@ -118,7 +119,7 @@ class CaseFrames:
                 self._attributes.append(attribute)
 
     def _read_oct2py_struct(self, struct):
-        self.name = ''
+        self.name = ""
         self._attributes = []
 
         for attribute, list_ in struct.items():
@@ -128,7 +129,7 @@ class CaseFrames:
 
             if attribute == "version" or attribute == "baseMVA":
                 setattr(self, attribute, list_)
-            elif attribute in ['bus_name', 'branch_name', 'gen_name']:
+            elif attribute in ["bus_name", "branch_name", "gen_name"]:
                 idx = pd.Index(list_, name=attribute)
                 setattr(self, attribute, idx)
             else:  # bus, branch, gen, gencost, dcline, dclinecost
@@ -141,7 +142,7 @@ class CaseFrames:
         return None
 
     def _read_numpy_struct(self, array):
-        self.name = ''
+        self.name = ""
         self._attributes = []
         for attribute in array.dtype.names:
             if attribute not in ATTRIBUTES:
@@ -150,7 +151,7 @@ class CaseFrames:
 
             if attribute == "version" or attribute == "baseMVA":
                 setattr(self, attribute, array[attribute].item().item())
-            elif attribute in ['bus_name', 'branch_name', 'gen_name']:
+            elif attribute in ["bus_name", "branch_name", "gen_name"]:
                 idx = pd.Index(array[attribute].item(), name=attribute)
                 setattr(self, attribute, idx)
             else:  # bus, branch, gen, gencost, dcline, dclinecost
@@ -168,12 +169,15 @@ class CaseFrames:
         columns = columns[:n_cols]
         if n_cols > len(columns):
             if attribute != "gencost" and attribute != "dclinecost":
-                msg = (f"Number of columns in {attribute} ({n_cols}) are"
-                       f" greater than the expected number.")
+                msg = (
+                    f"Number of columns in {attribute} ({n_cols}) are"
+                    f" greater than the expected number."
+                )
                 raise IndexError(msg)
-            columns = (columns[:-1]
-                       + ["{}_{}".format(columns[-1], i)
-                          for i in range(n_cols - len(columns), -1, -1)])
+            columns = columns[:-1] + [
+                "{}_{}".format(columns[-1], i)
+                for i in range(n_cols - len(columns), -1, -1)
+            ]
         return pd.DataFrame(data, columns=columns)
 
     @property
@@ -181,30 +185,34 @@ class CaseFrames:
         return self._attributes
 
     def _update_index(self):
-        if 'bus_name' in self._attributes:
+        if "bus_name" in self._attributes:
             self.bus.set_index(self.bus_name, drop=False, inplace=True)
         else:
-            self.bus.set_index(pd.RangeIndex(1, len(self.bus.index) + 1),
-                               drop=False, inplace=True)
+            self.bus.set_index(
+                pd.RangeIndex(1, len(self.bus.index) + 1), drop=False, inplace=True
+            )
 
-        if 'branch_name' in self._attributes:
+        if "branch_name" in self._attributes:
             self.branch.set_index(self.branch_name, drop=False, inplace=True)
         else:
-            self.branch.set_index(pd.RangeIndex(1, len(self.branch.index) + 1),
-                                  drop=False, inplace=True)
+            self.branch.set_index(
+                pd.RangeIndex(1, len(self.branch.index) + 1), drop=False, inplace=True
+            )
 
-        if 'gen_name' in self._attributes:
+        if "gen_name" in self._attributes:
             self.gen.set_index(self.gen_name, drop=False, inplace=True)
             try:
                 self.gencost.set_index(self.gen_name, drop=False, inplace=True)
             except AttributeError:
                 pass
         else:
-            self.gen.set_index(pd.RangeIndex(1, len(self.gen.index) + 1),
-                               drop=False, inplace=True)
+            self.gen.set_index(
+                pd.RangeIndex(1, len(self.gen.index) + 1), drop=False, inplace=True
+            )
             try:
-                self.gencost.set_index(pd.RangeIndex(1, len(self.gen.index) + 1),
-                                       drop=False, inplace=True)
+                self.gencost.set_index(
+                    pd.RangeIndex(1, len(self.gen.index) + 1), drop=False, inplace=True
+                )
             except AttributeError:
                 pass
 
@@ -221,20 +229,20 @@ class CaseFrames:
         with pd.ExcelWriter(path) as writer:
             pd.DataFrame(
                 data={
-                    'INFO': {
-                        'version': getattr(self, 'version', None),
-                        'baseMVA': getattr(self, 'baseMVA', None),
+                    "INFO": {
+                        "version": getattr(self, "version", None),
+                        "baseMVA": getattr(self, "baseMVA", None),
                     }
                 }
-            ).to_excel(writer, sheet_name='info')
+            ).to_excel(writer, sheet_name="info")
             for attribute in self._attributes:
                 if attribute == "version" or attribute == "baseMVA":
                     # TODO: make self._attributes_non_pandas?
                     continue
-                elif attribute in ['bus_name', 'branch_name', 'gen_name']:
-                    pd.DataFrame(data={
-                        attribute: getattr(self, attribute)
-                    }).to_excel(writer, sheet_name=attribute)
+                elif attribute in ["bus_name", "branch_name", "gen_name"]:
+                    pd.DataFrame(data={attribute: getattr(self, attribute)}).to_excel(
+                        writer, sheet_name=attribute
+                    )
                 else:
                     getattr(self, attribute).to_excel(writer, sheet_name=attribute)
 
@@ -250,9 +258,9 @@ class CaseFrames:
         """
         pd.DataFrame(
             data={
-                'INFO': {
-                    'version': getattr(self, 'version', None),
-                    'baseMVA': getattr(self, 'baseMVA', None),
+                "INFO": {
+                    "version": getattr(self, "version", None),
+                    "baseMVA": getattr(self, "baseMVA", None),
                 }
             }
         ).to_csv(os.path.join(path, "info.csv"))
@@ -261,10 +269,10 @@ class CaseFrames:
             if attribute == "version" or attribute == "baseMVA":
                 # TODO: make self._attributes_non_pandas?
                 continue
-            elif attribute in ['bus_name', 'branch_name', 'gen_name']:
-                pd.DataFrame(data={
-                    attribute: getattr(self, attribute)
-                }).to_csv(os.path.join(path, f"{attribute}.csv"))
+            elif attribute in ["bus_name", "branch_name", "gen_name"]:
+                pd.DataFrame(data={attribute: getattr(self, attribute)}).to_csv(
+                    os.path.join(path, f"{attribute}.csv")
+                )
             else:
                 getattr(self, attribute).to_csv(os.path.join(path, f"{attribute}.csv"))
 
@@ -275,8 +283,8 @@ class CaseFrames:
         The value of the data will be in str, numeric, and list.
         """
         data = {
-            'version': getattr(self, 'version', None),
-            'baseMVA': getattr(self, 'baseMVA', None),
+            "version": getattr(self, "version", None),
+            "baseMVA": getattr(self, "baseMVA", None),
         }
         for attribute in self._attributes:
             if attribute == "version" or attribute == "baseMVA":
