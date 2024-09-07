@@ -28,13 +28,9 @@ jobs:
         if: matrix.platform == 'octave'
         uses: MATPOWER/action-install-octave-linux@v1
 
-      - name: Install requirements
-        run: |
-          pip install -r requirements-dev.txt
-
       - name: Install package
         run: |
-          pip install -e .
+          pip install -e ."[dev]"
 
       - name: Generate coverage report
         run: |
