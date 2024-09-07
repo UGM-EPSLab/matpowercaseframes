@@ -1,15 +1,15 @@
-pandas>=1.2.0
-numpy>=1.21.5
+pandas==2.2.2
+numpy==2.1.1
 
-openpyxl>=3.1.2
+openpyxl==3.1.5
 
-oct2py>=5.7.0
-matpower>=7.1.0.2.1.8
+oct2py==5.7.2
+matpower==8.0.0.2.1.8
 
-pre-commit>=2.21.0
-ruff>=0.5.0
-setuptools>=68.0.0
+pre-commit==3.8.0
+ruff==0.6.4
+setuptools==74.1.2
 
-pytest
-pytest-cov
-pytest-xdist
+pytest==8.3.2
+pytest-cov==5.0.0
+pytest-xdist==3.6.1

@@ -52,6 +52,7 @@ class CaseFrames:
         elif isinstance(data, np.ndarray):
             # TYPE: structured NumPy array
             # TODO: also support from.mat file via scipy.io
+            # TODO: when is the input from numpy array?
             if data.dtype.names is None:
                 message = f"Source is {type(data)} but not structured NumPy array."
                 raise TypeError(message)
@@ -165,20 +166,20 @@ class CaseFrames:
     @staticmethod
     def _get_dataframe(attribute, data, n_cols):
         # NOTE: .get('key') instead of ['key'] to default range
-        columns = COLUMNS.get(attribute, list(range(0, n_cols)))
+        columns = COLUMNS.get(attribute, list(range(n_cols)))
         columns = columns[:n_cols]
         if n_cols > len(columns):
-            if attribute != "gencost" and attribute != "dclinecost":
+            if attribute not in ("gencost", "dclinecost"):
                 msg = (
-                    f"Number of columns in {attribute} ({n_cols}) are"
-                    f" greater than the expected number."
+                    f"Number of columns in {attribute} ({n_cols}) is greater"
+                    f" than the expected number."
                 )
                 raise IndexError(msg)
             columns = columns[:-1] + [
                 "{}_{}".format(columns[-1], i)
                 for i in range(n_cols - len(columns), -1, -1)
             ]
-        return pd.DataFrame(data, columns=columns)
+        return pd.DataFrame(data, columns=columns).convert_dtypes()
 
     @property
     def attributes(self):
