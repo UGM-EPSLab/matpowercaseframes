@@ -1,6 +1,7 @@
 import os
 
 import numpy as np
+import pandas as pd
 import pytest
 
 from matpowercaseframes import CaseFrames
@@ -26,12 +27,23 @@ def test_input_oct2py_io_Struct():
     m = start_instance()
 
     # before run
-    mpc = m.loadcase("case9", verbose=False)
-    CaseFrames(mpc)
+    mpc = m.loadcase(CASE_NAME, verbose=False)
+    cf_mpc = CaseFrames(mpc)  # _read_oct2py_struct
+    cf_parse = CaseFrames(CASE_NAME)  # _read_matpower
+
+    for attribute in cf_mpc.attributes:
+        df_mpc = getattr(cf_mpc, attribute)
+        df_parse = getattr(cf_parse, attribute)
+
+        if isinstance(df_mpc, pd.DataFrame):
+            assert df_mpc.columns.equals(df_parse.columns)
+            assert df_mpc.equals(df_parse)
+        else:
+            assert df_mpc == df_parse
 
     # after run
     mpc = m.runpf(mpc, verbose=False)
-    CaseFrames(mpc)
+    _ = CaseFrames(mpc)
 
     m.exit()
 
