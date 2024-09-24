@@ -179,7 +179,7 @@ class CaseFrames:
                 "{}_{}".format(columns[-1], i)
                 for i in range(n_cols - len(columns), -1, -1)
             ]
-        return pd.DataFrame(data, columns=columns).convert_dtypes()
+        return pd.DataFrame(data, columns=columns)
 
     @property
     def attributes(self):
@@ -216,6 +216,30 @@ class CaseFrames:
                 )
             except AttributeError:
                 pass
+
+    def infer_numpy(self):
+        for attribute in self._attributes:
+            df = getattr(self, attribute)
+            if isinstance(df, pd.DataFrame):
+                df = self._infer_numpy(df)
+                setattr(self, attribute, df)
+
+    @staticmethod
+    def _infer_numpy(df):
+        df = df.convert_dtypes()
+
+        columns = df.select_dtypes(include=["integer"]).columns
+        df[columns] = df[columns].astype(int, errors="ignore")
+
+        columns = df.select_dtypes(include=["float"]).columns
+        df[columns] = df[columns].astype(float, errors="ignore")
+
+        columns = df.select_dtypes(include=["string"]).columns
+        df[columns] = df[columns].astype(str)
+
+        columns = df.select_dtypes(include=["boolean"]).columns
+        df[columns] = df[columns].astype(bool)
+        return df
 
     def to_excel(self, path):
         """
