@@ -28,9 +28,27 @@ def test_input_oct2py_io_Struct():
 
     # before run
     mpc = m.loadcase(CASE_NAME, verbose=False)
+
+    # after run
+    mpc = m.runpf(mpc, verbose=False)
+    _ = CaseFrames(mpc)
+
+    m.exit()
+
+
+def test_input_oct2py_io_Struct_and_parse_are_identical():
+    from matpower import start_instance
+
+    m = start_instance()
+
+    # before run
+    mpc = m.loadcase(CASE_NAME, verbose=False)
     cf_mpc = CaseFrames(mpc)  # _read_oct2py_struct
     cf_parse = CaseFrames(CASE_NAME)  # _read_matpower
 
+    # convert to data type recognizable by numpy from pd.convert_dtypes()
+    cf_mpc.infer_numpy()
+    cf_parse.infer_numpy()
     for attribute in cf_mpc.attributes:
         df_mpc = getattr(cf_mpc, attribute)
         df_parse = getattr(cf_parse, attribute)
