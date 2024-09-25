@@ -20,17 +20,24 @@ except ImportError:
 
 class CaseFrames:
     def __init__(self, data, update_index=True, load_case_engine=None):
-        """Convert data into CaseFrames format
+        """
+        Load data and initialize the CaseFrames class.
 
         Args:
-            data (str|dict):
-                str of path | str of matpower case name | dict | oct2py.io.Struct |
-                structured NumPy array
+            data (str | dict | oct2py.io.Struct | np.ndarray):
+                - str: File path to .m file or MATPOWER case name.
+                - dict: Data from a structured dictionary.
+                - oct2py.io.Struct: Octave's oct2py struct.
+                - np.ndarray: Structured NumPy array with named fields.
             update_index (bool, optional):
-                Update index numbering if True. Defaults to True.
+                Whether to update the index numbering. Defaults to True.
+            load_case_engine (object, optional):
+                External engine used to call MATPOWER `loadcase` (e.g. Octave). Defaults
+                to None. If None, parse data using matpowercaseframes.reader.parse_file.
 
         Raises:
-            TypeError: Error input data invalid.
+            TypeError: If the input data format is unsupported.
+            FileNotFoundError: If the specified file cannot be found.
         """
         # TODO: support read excel
         # TODO: support Path object
@@ -54,12 +61,12 @@ class CaseFrames:
             # TODO: also support from.mat file via scipy.io
             # TODO: when is the input from numpy array?
             if data.dtype.names is None:
-                message = f"Source is {type(data)} but not structured NumPy array."
+                message = f"Source is {type(data)} but not a structured NumPy array."
                 raise TypeError(message)
             self._read_numpy_struct(array=data)
         else:
             message = (
-                f"Not supported source with type {type(data)}. Data must be str path to"
+                f"Not supported source type {type(data)}. Data must be a str path to"
                 f" .m file, or oct2py.io.Struct, dict, or structured NumPy array."
             )
             raise TypeError(message)
@@ -69,7 +76,18 @@ class CaseFrames:
 
     @staticmethod
     def _get_path(path):
-        # TYPE: str of path | str of matpower case name
+        """
+        Determine the correct file path for the given input.
+
+        Args:
+            path (str): File path or MATPOWER case name.
+
+        Returns:
+            str: Resolved file path.
+
+        Raises:
+            FileNotFoundError: If the file or MATPOWER case cannot be found.
+        """
         if os.path.isfile(path):
             return path
 
@@ -77,7 +95,6 @@ class CaseFrames:
         if os.path.isfile(path_added_m):
             return path_added_m
 
-        # TYPE: str of matpower case name
         if MATPOWER_EXIST:
             path_added_matpower = os.path.join(matpower.path_matpower, f"data/{path}")
             if os.path.isfile(path_added_matpower):
@@ -92,7 +109,15 @@ class CaseFrames:
         raise FileNotFoundError
 
     def _read_matpower(self, filepath):
-        # ! Old attribute is not guaranted to be replaced in re-read
+        """
+        Read and parse a MATPOWER file.
+
+        Old attribute is not guaranted to be replaced in re-read. This method is
+        intended to be used only during initialization.
+
+        Args:
+            filepath (str): Path to the MATPOWER file.
+        """
         with open(filepath) as f:
             string = f.read()
 
@@ -104,7 +129,7 @@ class CaseFrames:
                 # ? Should we support custom attributes?
                 continue
 
-            # TODO: migrate using GridCal approach
+            # TODO: compare with GridCal approach
             list_ = parse_file(attribute, string)
             if list_ is not None:
                 if attribute == "version" or attribute == "baseMVA":
@@ -120,6 +145,13 @@ class CaseFrames:
                 self._attributes.append(attribute)
 
     def _read_oct2py_struct(self, struct):
+        """
+        Read data from an Octave struct or dictionary.
+
+        Args:
+            struct (dict):
+                Data in structured dictionary or Octave's oct2py struct format.
+        """
         self.name = ""
         self._attributes = []
 
@@ -143,6 +175,12 @@ class CaseFrames:
         return None
 
     def _read_numpy_struct(self, array):
+        """
+        Read data from a structured NumPy array.
+
+        Args:
+            array (np.ndarray): Structured NumPy array with named fields.
+        """
         self.name = ""
         self._attributes = []
         for attribute in array.dtype.names:
@@ -165,6 +203,22 @@ class CaseFrames:
 
     @staticmethod
     def _get_dataframe(attribute, data, n_cols):
+        """
+        Create a DataFrame with proper columns from raw data.
+
+        Args:
+            attribute (str): Name of the attribute.
+            data (list | np.ndarray): Data for the attribute.
+            n_cols (int): Number of columns in the data.
+
+        Returns:
+            pd.DataFrame: DataFrame with appropriate columns.
+
+        Raises:
+            IndexError:
+                If the number of columns in the data exceeds the expected number.
+        """
+
         # NOTE: .get('key') instead of ['key'] to default range
         columns = COLUMNS.get(attribute, list(range(n_cols)))
         columns = columns[:n_cols]
@@ -179,13 +233,22 @@ class CaseFrames:
                 "{}_{}".format(columns[-1], i)
                 for i in range(n_cols - len(columns), -1, -1)
             ]
-        return pd.DataFrame(data, columns=columns).convert_dtypes()
+        return pd.DataFrame(data, columns=columns)
 
     @property
     def attributes(self):
+        """
+        List of attributes that have been parsed from the input data.
+
+        Returns:
+            list: List of attribute names.
+        """
         return self._attributes
 
     def _update_index(self):
+        """
+        Update the index of the bus, branch, and generator tables based on naming.
+        """
         if "bus_name" in self._attributes:
             self.bus.set_index(self.bus_name, drop=False, inplace=True)
         else:
@@ -217,16 +280,60 @@ class CaseFrames:
             except AttributeError:
                 pass
 
+    def infer_numpy(self):
+        """
+        Infer and convert data types in all DataFrames to appropriate NumPy-compatible
+        types.
+        """
+        for attribute in self._attributes:
+            df = getattr(self, attribute)
+            if isinstance(df, pd.DataFrame):
+                df = self._infer_numpy(df)
+                setattr(self, attribute, df)
+
+    @staticmethod
+    def _infer_numpy(df):
+        """
+        Infer and convert the data types of a DataFrame to NumPy-compatible types.
+
+        Args:
+            df (pd.DataFrame): DataFrame to be processed.
+
+        Returns:
+            pd.DataFrame: DataFrame with updated data types.
+        """
+        df = df.convert_dtypes()
+
+        columns = df.select_dtypes(include=["integer"]).columns
+        df[columns] = df[columns].astype(int, errors="ignore")
+
+        columns = df.select_dtypes(include=["float"]).columns
+        df[columns] = df[columns].astype(float, errors="ignore")
+
+        columns = df.select_dtypes(include=["string"]).columns
+        df[columns] = df[columns].astype(str)
+
+        columns = df.select_dtypes(include=["boolean"]).columns
+        df[columns] = df[columns].astype(bool)
+        return df
+
     def to_excel(self, path):
         """
-        Save CaseFrames in single xlsx file
+        Save the CaseFrames data into a single Excel file.
 
-        Parameters
-        ----------
-        path : str
-            String of path containing an extension of .xlsx. The directory where the
-            file is going to be written must exists.
+        Args:
+            path (str): File path for the Excel file.
         """
+
+        # make dir
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+
+        # add extension if not exists
+        base, ext = os.path.splitext(path)
+        if ext.lower() not in [".xls", ".xlsx"]:
+            path = base + ".xlsx"
+
+        # convert to xlsx
         with pd.ExcelWriter(path) as writer:
             pd.DataFrame(
                 data={
@@ -238,7 +345,6 @@ class CaseFrames:
             ).to_excel(writer, sheet_name="info")
             for attribute in self._attributes:
                 if attribute == "version" or attribute == "baseMVA":
-                    # TODO: make self._attributes_non_pandas?
                     continue
                 elif attribute in ["bus_name", "branch_name", "gen_name"]:
                     pd.DataFrame(data={attribute: getattr(self, attribute)}).to_excel(
@@ -249,14 +355,14 @@ class CaseFrames:
 
     def to_csv(self, path):
         """
-        Save CaseFrames into multiple csv files
+        Save the CaseFrames data into multiple CSV files.
 
-        Parameters
-        ----------
-        path : str
-            String of path to directory where multiple csv files will be written.
-            The directory where the files is going to be written must exists.
+        Args:
+            path (str): Directory path where the CSV files will be saved.
         """
+        # make dir
+        os.makedirs(path, exist_ok=True)
+
         pd.DataFrame(
             data={
                 "INFO": {
@@ -268,7 +374,6 @@ class CaseFrames:
 
         for attribute in self._attributes:
             if attribute == "version" or attribute == "baseMVA":
-                # TODO: make self._attributes_non_pandas?
                 continue
             elif attribute in ["bus_name", "branch_name", "gen_name"]:
                 pd.DataFrame(data={attribute: getattr(self, attribute)}).to_csv(
@@ -279,9 +384,12 @@ class CaseFrames:
 
     def to_dict(self):
         """
-        Convert CaseFrames into dictionary
+        Convert the CaseFrames data into a dictionary.
 
         The value of the data will be in str, numeric, and list.
+
+        Returns:
+            dict: Dictionary with attribute names as keys and their data as values.
         """
         data = {
             "version": getattr(self, "version", None),
@@ -296,8 +404,12 @@ class CaseFrames:
 
     def to_mpc(self):
         """
-        Convert CaseFrames into matpower-compatible data, that is dictionary
+        Convert the CaseFrames data into a format compatible with MATPOWER (as a
+        dictionary).
 
         The value of the data will be in str, numeric, and list.
+
+        Returns:
+            dict: MATPOWER-compatible dictionary with data.
         """
         return self.to_dict()
