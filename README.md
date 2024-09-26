@@ -23,7 +23,7 @@ cf = CaseFrames(case_path)
 print(cf.gencost)
 ```
 
-If you have `matpower` installed via `pip install matpower` (did not require `matpower[octave]`), you can easily navigate `matpower` case using:
+If you have `matpower` installed via `pip install matpower` (did not requires `matpower[octave]`), you can easily navigate `matpower` case using:
 
 ```python
 import os
@@ -37,7 +37,7 @@ cf = CaseFrames(case_path)
 print(cf.gencost)
 ```
 
-Since `matpower` itself suggests that we should use `loadcase` instead of parsing, we can use an engine using (require `matlab` or `octave`),
+In some cases, a case file may contain `matlab` code at the end of the file that needs to be executed. An example of such case is `case69.m`. To properly load this type of file, use the method recommended by `matpower`, which is using `loadcase` instead of parsing. To do this, use the `load_case_engine` parameter (requires `matlab` or `octave`), as demonstrated here:
 
 ```python
 from matpower import start_instance
@@ -45,12 +45,12 @@ from matpowercaseframes import CaseFrames
 
 m = start_instance()
 
-case_name = f"case16am.m"
-cf_16am_lc = CaseFrames(case_name, load_case_engine=m)
-cf_16am_lc.branch  # see that the branch is already in p.u., converted by `loadcase`
+case_name = f"case69.m"
+cf_lc = CaseFrames(case_name, load_case_engine=m)
+cf_lc.branch  # see that the branch is already in p.u., converted by `loadcase`
 ```
 
-Furthermore, `matpowercaseframes` also support generating data that is acceptable by `matpower` via `matpower-pip` package (require `matlab` or `octave`),
+Furthermore, `matpowercaseframes` also support generating data that is acceptable by `matpower` via `matpower-pip` package (requires `matlab` or `octave`),
 
 ```python
 from matpowercaseframes import CaseFrames
