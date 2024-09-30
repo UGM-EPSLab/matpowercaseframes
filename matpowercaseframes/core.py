@@ -317,12 +317,14 @@ class CaseFrames:
         df[columns] = df[columns].astype(bool)
         return df
 
-    def to_excel(self, path):
+    def to_excel(self, path, prefix="", suffix=""):
         """
         Save the CaseFrames data into a single Excel file.
 
         Args:
             path (str): File path for the Excel file.
+            prefix (str): Sheet prefix for each attribute for the Excel file.
+            suffix (str): Sheet suffix for each attribute for the Excel file.
         """
 
         # make dir
@@ -342,23 +344,27 @@ class CaseFrames:
                         "baseMVA": getattr(self, "baseMVA", None),
                     }
                 }
-            ).to_excel(writer, sheet_name="info")
+            ).to_excel(writer, sheet_name=f"{prefix}info{suffix}")
             for attribute in self._attributes:
                 if attribute == "version" or attribute == "baseMVA":
                     continue
                 elif attribute in ["bus_name", "branch_name", "gen_name"]:
                     pd.DataFrame(data={attribute: getattr(self, attribute)}).to_excel(
-                        writer, sheet_name=attribute
+                        writer, sheet_name=f"{prefix}{attribute}{suffix}"
                     )
                 else:
-                    getattr(self, attribute).to_excel(writer, sheet_name=attribute)
+                    getattr(self, attribute).to_excel(
+                        writer, sheet_name=f"{prefix}{attribute}{suffix}"
+                    )
 
-    def to_csv(self, path):
+    def to_csv(self, path, prefix="", suffix=""):
         """
         Save the CaseFrames data into multiple CSV files.
 
         Args:
             path (str): Directory path where the CSV files will be saved.
+            prefix (str): Sheet prefix for each attribute for the CSV files.
+            suffix (str): Sheet suffix for each attribute for the CSV files.
         """
         # make dir
         os.makedirs(path, exist_ok=True)
@@ -370,17 +376,19 @@ class CaseFrames:
                     "baseMVA": getattr(self, "baseMVA", None),
                 }
             }
-        ).to_csv(os.path.join(path, "info.csv"))
+        ).to_csv(os.path.join(path, f"{prefix}info{suffix}.csv"))
 
         for attribute in self._attributes:
             if attribute == "version" or attribute == "baseMVA":
                 continue
             elif attribute in ["bus_name", "branch_name", "gen_name"]:
                 pd.DataFrame(data={attribute: getattr(self, attribute)}).to_csv(
-                    os.path.join(path, f"{attribute}.csv")
+                    os.path.join(path, f"{prefix}{attribute}{suffix}.csv")
                 )
             else:
-                getattr(self, attribute).to_csv(os.path.join(path, f"{attribute}.csv"))
+                getattr(self, attribute).to_csv(
+                    os.path.join(path, f"{prefix}{attribute}{suffix}.csv")
+                )
 
     def to_dict(self):
         """
