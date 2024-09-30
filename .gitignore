@@ -139,3 +139,6 @@ dmypy.json
 
 # Editor and workspace
 .vscode
+
+# Mac
+.DS_Store

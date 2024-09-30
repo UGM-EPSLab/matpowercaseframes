@@ -125,14 +125,24 @@ def test_get_attributes():
     # print(cf.attributes)
 
 
+# !WARNING: Refactor to fixture to read file is proven to be slower
+#   pytest -n auto --durations=0
+
+
 def test_to_xlsx():
     cf = CaseFrames(CASE_PATH)
     cf.to_excel("tests/results/test_to_xlsx.xlsx")
+    cf.to_excel(
+        "tests/results/test_to_xlsx_prefix_suffix.xlsx",
+        prefix="mpc.",
+        suffix="_test",
+    )
 
 
 def test_to_csv():
     cf = CaseFrames(CASE_PATH)
     cf.to_csv("tests/results")
+    cf.to_csv("tests/results", prefix="mpc.", suffix="_test")
 
 
 def test_to_dict():
