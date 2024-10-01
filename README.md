@@ -1,5 +1,7 @@
 # MATPOWER Case Frames
 
+[![PyPI version](https://badge.fury.io/py/matpowercaseframes.svg)](https://pypi.org/project/matpowercaseframes/)
+
 Parse MATPOWER case into pandas DataFrame.
 
 Unlike the [tutorial](https://github.com/yasirroni/matpower-pip#extra-require-oct2py-or-matlabengine) on [`matpower-pip`](https://github.com/yasirroni/matpower-pip), this package supports parsing MATPOWER case using `re` instead of `Oct2Py` and Octave. After that, you can further parse the data into any format supported by your solver.
