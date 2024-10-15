@@ -87,7 +87,8 @@ class CaseFrames:
         self.setattr(name, df)
 
     def setattr(self, name, value):
-        self._attributes.append(name)
+        if name not in self._attributes:
+            self._attributes.append(name)
         self.__setattr__(name, value)
 
     @staticmethod
