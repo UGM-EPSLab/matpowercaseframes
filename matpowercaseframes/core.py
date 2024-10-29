@@ -2,6 +2,7 @@
 # Copyright 2007 - 2022: numerous others credited in AUTHORS.rst
 # Copyright 2022: https://github.com/yasirroni/
 
+import copy
 import os
 
 import numpy as np
@@ -19,7 +20,7 @@ except ImportError:
 
 
 class CaseFrames:
-    def __init__(self, data, update_index=True, load_case_engine=None):
+    def __init__(self, data=None, update_index=True, load_case_engine=None):
         """
         Load data and initialize the CaseFrames class.
 
@@ -64,6 +65,10 @@ class CaseFrames:
                 message = f"Source is {type(data)} but not a structured NumPy array."
                 raise TypeError(message)
             self._read_numpy_struct(array=data)
+        elif data is None:
+            self.name = ""
+            self._attributes = []
+            update_index = False
         else:
             message = (
                 f"Not supported source type {type(data)}. Data must be a str path to"
@@ -335,6 +340,70 @@ class CaseFrames:
         columns = df.select_dtypes(include=["boolean"]).columns
         df[columns] = df[columns].astype(bool)
         return df
+
+    def to_pu(self):
+        """
+        Create a new CaseFrame object with data in p.u. and rad.
+
+        Returns:
+            CaseFrames: CaseFrames object with data in p.u. and rad.
+        """
+        # TODO: resclace cost based on mode
+        cf = copy.deepcopy(self)
+
+        if "bus" in self.attributes:
+            columns = ["PD", "QD", "GS", "BS"]
+            columns_exist = [col for col in columns if col in cf.bus.columns]
+            cf.bus[columns_exist] = cf.bus[columns_exist] / self.baseMVA
+            columns = ["LAM_P", "LAM_Q"]
+            columns_exist = [col for col in columns if col in cf.bus.columns]
+            cf.bus[columns_exist] = cf.bus[columns_exist] * self.baseMVA
+            cf.bus["VA"] = cf.bus["VA"] * np.pi / 180
+
+        if "gen" in self.attributes:
+            columns = [
+                "PG",
+                "QG",
+                "QMAX",
+                "QMIN",
+                "PMAX",
+                "PMIN",
+                "PC1",
+                "PC2",
+                "QC1MIN",
+                "QC1MAX",
+                "QC2MIN",
+                "QC2MAX",
+                "RAMP_AGC",
+                "RAMP_10",
+                "RAMP_30",
+                "RAMP_Q",
+            ]
+            columns_exist = [col for col in columns if col in cf.gen.columns]
+            cf.gen[columns_exist] = cf.gen[columns_exist] / self.baseMVA
+
+            columns = ["MU_PMAX", "MU_PMIN", "MU_QMAX", "MU_QMIN"]
+            columns_exist = [col for col in columns if col in cf.gen.columns]
+            cf.gen[columns_exist] = cf.gen[columns_exist] * self.baseMVA
+
+        if "branch" in self.attributes:
+            columns = ["RATE_A", "RATE_B", "RATE_C", "PF", "QF", "PT", "QT"]
+            columns_exist = [col for col in columns if col in cf.branch.columns]
+            cf.branch[columns_exist] = cf.branch[columns_exist] / self.baseMVA
+
+            columns = ["MU_SF", "MU_ST"]
+            columns_exist = [col for col in columns if col in cf.branch.columns]
+            cf.branch[columns_exist] = cf.branch[columns_exist] * self.baseMVA
+
+            columns = ["SHIFT", "ANGMIN", "ANGMAX"]
+            columns_exist = [col for col in columns if col in cf.branch.columns]
+            cf.branch[columns_exist] = cf.branch[columns_exist] * np.pi / 180
+
+            columns = ["MU_ANGMIN", "MU_ANGMAX"]
+            columns_exist = [col for col in columns if col in cf.branch.columns]
+            cf.branch[columns_exist] = cf.branch[columns_exist] * 180 / np.pi
+
+        return cf
 
     def to_excel(self, path, prefix="", suffix=""):
         """
