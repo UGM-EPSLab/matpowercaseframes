@@ -74,6 +74,23 @@ class CaseFrames:
         if update_index:
             self._update_index()
 
+    def setattr_as_df(self, name, value, columns_template=None):
+        """
+        Convert value to df and assign to attributes.
+
+        Args:
+            name (str): Attribute name.
+            value: Data that can be converted into DataFrame.
+            columns_template: List of column names used for DataFrame column header.
+        """
+        df = self._get_dataframe(name, value, columns_template=columns_template)
+        self.setattr(name, df)
+
+    def setattr(self, name, value):
+        if name not in self._attributes:
+            self._attributes.append(name)
+        self.__setattr__(name, value)
+
     @staticmethod
     def _get_path(path):
         """
@@ -133,16 +150,14 @@ class CaseFrames:
             list_ = parse_file(attribute, string)
             if list_ is not None:
                 if attribute == "version" or attribute == "baseMVA":
-                    setattr(self, attribute, list_[0][0])
+                    value = list_[0][0]
                 elif attribute in ["bus_name", "branch_name", "gen_name"]:
-                    idx = pd.Index([name[0] for name in list_], name=attribute)
-                    setattr(self, attribute, idx)
+                    value = pd.Index([name[0] for name in list_], name=attribute)
                 else:  # bus, branch, gen, gencost, dcline, dclinecost
                     n_cols = max([len(l) for l in list_])
-                    df = self._get_dataframe(attribute, list_, n_cols)
-                    setattr(self, attribute, df)
+                    value = self._get_dataframe(attribute, list_, n_cols)
 
-                self._attributes.append(attribute)
+                self.setattr(attribute, value)
 
     def _read_oct2py_struct(self, struct):
         """
@@ -161,16 +176,14 @@ class CaseFrames:
                 continue
 
             if attribute == "version" or attribute == "baseMVA":
-                setattr(self, attribute, list_)
+                value = list_
             elif attribute in ["bus_name", "branch_name", "gen_name"]:
-                idx = pd.Index(list_, name=attribute)
-                setattr(self, attribute, idx)
+                value = pd.Index(list_, name=attribute)
             else:  # bus, branch, gen, gencost, dcline, dclinecost
                 n_cols = list_.shape[1]
-                df = self._get_dataframe(attribute, list_, n_cols)
-                setattr(self, attribute, df)
+                value = self._get_dataframe(attribute, list_, n_cols)
 
-            self._attributes.append(attribute)
+            self.setattr(attribute, value)
 
         return None
 
@@ -189,20 +202,18 @@ class CaseFrames:
                 continue
 
             if attribute == "version" or attribute == "baseMVA":
-                setattr(self, attribute, array[attribute].item().item())
+                value = array[attribute].item().item()
             elif attribute in ["bus_name", "branch_name", "gen_name"]:
-                idx = pd.Index(array[attribute].item(), name=attribute)
-                setattr(self, attribute, idx)
+                value = pd.Index(array[attribute].item(), name=attribute)
             else:  # bus, branch, gen, gencost, dcline, dclinecost
                 data = array[attribute].item()
                 n_cols = data.shape[1]
-                df = self._get_dataframe(attribute, data, n_cols)
-                setattr(self, attribute, df)
+                value = self._get_dataframe(attribute, data, n_cols)
 
-            self._attributes.append(attribute)
+            self.setattr(attribute, value)
 
     @staticmethod
-    def _get_dataframe(attribute, data, n_cols):
+    def _get_dataframe(attribute, data, n_cols=None, columns_template=None):
         """
         Create a DataFrame with proper columns from raw data.
 
@@ -219,9 +230,16 @@ class CaseFrames:
                 If the number of columns in the data exceeds the expected number.
         """
 
+        if n_cols is None:
+            n_cols = data.shape[1]
+
         # NOTE: .get('key') instead of ['key'] to default range
-        columns = COLUMNS.get(attribute, list(range(n_cols)))
-        columns = columns[:n_cols]
+        # TODO: support custom COLUMNS
+        if columns_template is None:
+            # get columns_template, default to range
+            columns_template = COLUMNS.get(attribute, list(range(n_cols)))
+
+        columns = columns_template[:n_cols]
         if n_cols > len(columns):
             if attribute not in ("gencost", "dclinecost"):
                 msg = (
@@ -233,6 +251,7 @@ class CaseFrames:
                 "{}_{}".format(columns[-1], i)
                 for i in range(n_cols - len(columns), -1, -1)
             ]
+
         return pd.DataFrame(data, columns=columns)
 
     @property
