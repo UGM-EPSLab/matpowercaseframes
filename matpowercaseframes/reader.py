@@ -41,15 +41,13 @@ def parse_file(attribute, string):
 
 
 def search_file(attribute, string):
-    if attribute in ["gen", "gencost", "bus", "branch", "dcline", "dclinecost"]:
-        pattern = r"mpc\.{}\s*=\s*\[[\n]?(?P<data>.*?)[\n]?\];".format(attribute)
+    if attribute in ["bus_name", "branch_name", "gen_name"]:
+        pattern = r"mpc\.{}\s*=\s*\{{[\n]?(?P<data>.*?)[\n]?\}};".format(attribute)
     elif attribute in ["version", "baseMVA"]:
         pattern = r"mpc\.{}\s*=\s*(?P<data>.*?);".format(attribute)
-    elif attribute in ["bus_name", "branch_name", "gen_name"]:
-        pattern = r"mpc\.{}\s*=\s*\{{[\n]?(?P<data>.*?)[\n]?\}};".format(attribute)
     else:
-        msg = f"Unknown mpc attribute name of {attribute}"
-        raise NameError(msg)
+        # ["gen", "gencost", "bus", "branch", "dcline", "dclinecost"] or any keys
+        pattern = r"mpc\.{}\s*=\s*\[[\n]?(?P<data>.*?)[\n]?\];".format(attribute)
 
     match = re.search(pattern, string, re.DOTALL)
 

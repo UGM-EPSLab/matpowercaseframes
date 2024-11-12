@@ -37,3 +37,12 @@ def test_loadcase_case16am():
 def test_read_without_ext():
     CASE_NAME = "case9"
     CaseFrames(CASE_NAME)
+
+
+def test_read_allow_any_keys():
+    CASE_NAME = "data/case9_load.m"
+    cf = CaseFrames(CASE_NAME)
+    assert "load" not in cf.attributes
+
+    cf = CaseFrames(CASE_NAME, allow_any_keys=True)
+    assert "load" in cf.attributes

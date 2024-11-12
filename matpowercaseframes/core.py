@@ -20,7 +20,14 @@ except ImportError:
 
 
 class CaseFrames:
-    def __init__(self, data=None, update_index=True, load_case_engine=None):
+    def __init__(
+        self,
+        data=None,
+        update_index=True,
+        load_case_engine=None,
+        allow_any_keys=False,
+        columns_templates=None,
+    ):
         """
         Load data and initialize the CaseFrames class.
 
@@ -42,21 +49,35 @@ class CaseFrames:
         """
         # TODO: support read excel
         # TODO: support Path object
+        if columns_templates is None:
+            self.columns_templates = copy.deepcopy(COLUMNS)
+        else:
+            self.columns_templates = {**COLUMNS, **columns_templates}
+
         if isinstance(data, str):
             # TYPE: str of path
             path = self._get_path(data)
 
             if load_case_engine is None:
                 # read with matpower parser
-                self._read_matpower(filepath=path)
+                self._read_matpower(
+                    filepath=path,
+                    allow_any_keys=allow_any_keys,
+                )
             else:
                 # read using loadcase
                 mpc = load_case_engine.loadcase(path)
-                self._read_oct2py_struct(struct=mpc)
+                self._read_oct2py_struct(
+                    struct=mpc,
+                    allow_any_keys=allow_any_keys,
+                )
 
         elif isinstance(data, dict):
             # TYPE: dict | oct2py.io.Struct
-            self._read_oct2py_struct(struct=data)
+            self._read_oct2py_struct(
+                struct=data,
+                allow_any_keys=allow_any_keys,
+            )
         elif isinstance(data, np.ndarray):
             # TYPE: structured NumPy array
             # TODO: also support from.mat file via scipy.io
@@ -64,7 +85,10 @@ class CaseFrames:
             if data.dtype.names is None:
                 message = f"Source is {type(data)} but not a structured NumPy array."
                 raise TypeError(message)
-            self._read_numpy_struct(array=data)
+            self._read_numpy_struct(
+                array=data,
+                allow_any_keys=allow_any_keys,
+            )
         elif data is None:
             self.name = ""
             self._attributes = []
@@ -95,6 +119,9 @@ class CaseFrames:
         if name not in self._attributes:
             self._attributes.append(name)
         self.__setattr__(name, value)
+
+    def update_columns_templates(self, columns_templates):
+        self.columns_templates.update(columns_templates)
 
     @staticmethod
     def _get_path(path):
@@ -130,7 +157,7 @@ class CaseFrames:
 
         raise FileNotFoundError
 
-    def _read_matpower(self, filepath):
+    def _read_matpower(self, filepath, allow_any_keys=False):
         """
         Read and parse a MATPOWER file.
 
@@ -147,8 +174,7 @@ class CaseFrames:
         self._attributes = []
 
         for attribute in find_attributes(string):
-            if attribute not in ATTRIBUTES:
-                # ? Should we support custom attributes?
+            if attribute not in ATTRIBUTES and not allow_any_keys:
                 continue
 
             # TODO: compare with GridCal approach
@@ -164,7 +190,7 @@ class CaseFrames:
 
                 self.setattr(attribute, value)
 
-    def _read_oct2py_struct(self, struct):
+    def _read_oct2py_struct(self, struct, allow_any_keys=False):
         """
         Read data from an Octave struct or dictionary.
 
@@ -176,8 +202,7 @@ class CaseFrames:
         self._attributes = []
 
         for attribute, list_ in struct.items():
-            if attribute not in ATTRIBUTES:
-                # ? Should we support custom attributes?
+            if attribute not in ATTRIBUTES and not allow_any_keys:
                 continue
 
             if attribute == "version" or attribute == "baseMVA":
@@ -192,7 +217,7 @@ class CaseFrames:
 
         return None
 
-    def _read_numpy_struct(self, array):
+    def _read_numpy_struct(self, array, allow_any_keys=False):
         """
         Read data from a structured NumPy array.
 
@@ -202,8 +227,7 @@ class CaseFrames:
         self.name = ""
         self._attributes = []
         for attribute in array.dtype.names:
-            if attribute not in ATTRIBUTES:
-                # ? Should we support custom attributes?
+            if attribute not in ATTRIBUTES and not allow_any_keys:
                 continue
 
             if attribute == "version" or attribute == "baseMVA":
@@ -217,8 +241,7 @@ class CaseFrames:
 
             self.setattr(attribute, value)
 
-    @staticmethod
-    def _get_dataframe(attribute, data, n_cols=None, columns_template=None):
+    def _get_dataframe(self, attribute, data, n_cols=None, columns_template=None):
         """
         Create a DataFrame with proper columns from raw data.
 
@@ -242,7 +265,9 @@ class CaseFrames:
         # TODO: support custom COLUMNS
         if columns_template is None:
             # get columns_template, default to range
-            columns_template = COLUMNS.get(attribute, list(range(n_cols)))
+            columns_template = self.columns_templates.get(
+                attribute, list(range(n_cols))
+            )
 
         columns = columns_template[:n_cols]
         if n_cols > len(columns):
