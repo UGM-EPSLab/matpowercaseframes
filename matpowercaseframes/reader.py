@@ -16,8 +16,9 @@ def find_name(string):
 
 
 def find_attributes(string):
-    pattern = "mpc\\.(?P<attribute>.*?)\\s*=\\s*"
-    return re.findall(pattern, string, re.DOTALL)
+    pattern = "^\\s*mpc\\.(?P<attribute>[^\\s=]*)"
+    match = re.findall(pattern, string, re.MULTILINE)
+    return match
 
 
 def parse_file(attribute, string):
@@ -49,7 +50,10 @@ def search_file(attribute, string):
         # ["gen", "gencost", "bus", "branch", "dcline", "dclinecost"] or any keys
         pattern = r"mpc\.{}\s*=\s*\[[\n]?(?P<data>.*?)[\n]?\];".format(attribute)
 
-    match = re.search(pattern, string, re.DOTALL)
+    try:
+        match = re.search(pattern, string, re.DOTALL)
+    except Exception:
+        return None
 
     if match is None:
         return None
