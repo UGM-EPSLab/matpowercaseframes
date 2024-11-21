@@ -208,7 +208,7 @@ class CaseFrames:
             if attribute == "version" or attribute == "baseMVA":
                 value = list_
             elif attribute in ["bus_name", "branch_name", "gen_name"]:
-                value = pd.Index(list_, name=attribute)
+                value = pd.Index([name[0] for name in list_], name=attribute)
             else:  # bus, branch, gen, gencost, dcline, dclinecost
                 n_cols = list_.shape[1]
                 value = self._get_dataframe(attribute, list_, n_cols)
@@ -519,6 +519,8 @@ class CaseFrames:
         for attribute in self._attributes:
             if attribute == "version" or attribute == "baseMVA":
                 data[attribute] = getattr(self, attribute)
+            elif attribute in ["bus_name", "branch_name", "gen_name"]:
+                data[attribute] = [list(i) for i in getattr(self, attribute)]
             else:
                 data[attribute] = getattr(self, attribute).values.tolist()
         return data
