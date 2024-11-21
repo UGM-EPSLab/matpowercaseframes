@@ -40,13 +40,16 @@ def test_case118():
 
     CASE_NAME = "case118.m"
     cf = CaseFrames(CASE_NAME)
-    cf_lc = CaseFrames(CASE_NAME)
+    cf_lc = CaseFrames(CASE_NAME, load_case_engine=m)
     mpc = m.loadcase(CASE_NAME)
     cf_mpc = CaseFrames(mpc)
 
     cf.infer_numpy()
     cf_lc.infer_numpy()
     cf_mpc.infer_numpy()
+
+    mpc = m.runpf(cf.to_mpc(), verbose=False)
+    _ = CaseFrames(mpc)
 
     m.exit()
 

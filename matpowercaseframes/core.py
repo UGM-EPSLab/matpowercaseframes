@@ -520,7 +520,8 @@ class CaseFrames:
             if attribute == "version" or attribute == "baseMVA":
                 data[attribute] = getattr(self, attribute)
             elif attribute in ["bus_name", "branch_name", "gen_name"]:
-                data[attribute] = [list(i) for i in getattr(self, attribute)]
+                # NOTE: must be in 2D Cell or 2D np.array
+                data[attribute] = np.atleast_2d(getattr(self, attribute).values).T
             else:
                 data[attribute] = getattr(self, attribute).values.tolist()
         return data
