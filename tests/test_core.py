@@ -26,6 +26,21 @@ def test_input_str_path():
     CaseFrames(CASE_PATH_CASE9)
 
 
+def test_read_excel():
+    CASE_NAME = "tests/data/case118_test_to_xlsx.xlsx"
+    cf = CaseFrames(CASE_NAME)
+    for attribute in [
+        "version",
+        "baseMVA",
+        "bus",
+        "gen",
+        "branch",
+        "gencost",
+        "bus_name",
+    ]:
+        assert attribute in cf.attributes
+
+
 def test_input_oct2py_io_Struct():
     from matpower import start_instance
 
@@ -136,9 +151,17 @@ def test_get_attributes():
 
 def test_to_xlsx():
     cf = CaseFrames(CASE_PATH_CASE9)
-    cf.to_excel("tests/results/case9/test_to_xlsx.xlsx")
+    cf.to_excel("tests/results/case9/case9_test_to_xlsx.xlsx")
     cf.to_excel(
-        "tests/results/case9_prefix_suffix/test_to_xlsx_prefix_suffix.xlsx",
+        "tests/results/case9_prefix_suffix/case9_test_to_xlsx_prefix_suffix.xlsx",
+        prefix="mpc.",
+        suffix="_test",
+    )
+
+    cf = CaseFrames(CASE_PATH_CASE118)
+    cf.to_excel("tests/results/case118/case118_test_to_xlsx.xlsx")
+    cf.to_excel(
+        "tests/results/case118_prefix_suffix/case118_test_to_xlsx_prefix_suffix.xlsx",
         prefix="mpc.",
         suffix="_test",
     )
