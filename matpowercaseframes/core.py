@@ -321,8 +321,7 @@ class CaseFrames:
                 # convert back to an index
                 value = pd.Index(sheet_data[attribute].values.tolist(), name=attribute)
             else:
-                # convert to a DataFrame, excluding the index column
-                value = sheet_data.iloc[:, 1:]
+                value = sheet_data
 
             self.setattr(attribute, value)
 
