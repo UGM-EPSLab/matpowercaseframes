@@ -64,7 +64,7 @@ class CaseFrames:
             allow_any_keys=allow_any_keys,
         )
         if update_index and self._attributes:
-            self._update_index()
+            self._update_index(allow_any_keys=allow_any_keys)
 
     def _read_data(
         self,
@@ -379,40 +379,51 @@ class CaseFrames:
         """
         return self._attributes
 
-    def _update_index(self):
+    def _update_index(self, allow_any_keys=False):
         """
-        Update the index of the bus, branch, and generator tables based on naming.
+        Update the index of the bus, branch, and generator tables based on naming. If
+        naming is not available, index start from 1 to N.
         """
-        if "bus_name" in self._attributes:
-            self.bus.set_index(self.bus_name, drop=False, inplace=True)
-        else:
-            self.bus.set_index(
-                pd.RangeIndex(1, len(self.bus.index) + 1), drop=False, inplace=True
-            )
-
-        if "branch_name" in self._attributes:
-            self.branch.set_index(self.branch_name, drop=False, inplace=True)
-        else:
-            self.branch.set_index(
-                pd.RangeIndex(1, len(self.branch.index) + 1), drop=False, inplace=True
-            )
-
-        if "gen_name" in self._attributes:
-            self.gen.set_index(self.gen_name, drop=False, inplace=True)
+        for attribute, attribute_name in zip(
+            ["bus", "branch", "gen"], ["bus_name", "branch_name", "gen_name"]
+        ):
+            attribute_data = getattr(self, attribute)
             try:
-                self.gencost.set_index(self.gen_name, drop=False, inplace=True)
+                attribute_name_data = getattr(self, attribute_name)
+                attribute_data.set_index(attribute_name_data, drop=False, inplace=True)
             except AttributeError:
-                pass
-        else:
-            self.gen.set_index(
-                pd.RangeIndex(1, len(self.gen.index) + 1), drop=False, inplace=True
-            )
-            try:
+                attribute_data.set_index(
+                    pd.RangeIndex(1, len(attribute_data.index) + 1),
+                    drop=False,
+                    inplace=True,
+                )
+
+        # gencost is optional
+        try:
+            if "gen_name" in self._attributes:
+                self.gencost.set_index(self.gen_name, drop=False, inplace=True)
+            else:
                 self.gencost.set_index(
                     pd.RangeIndex(1, len(self.gen.index) + 1), drop=False, inplace=True
                 )
-            except AttributeError:
-                pass
+        except AttributeError:
+            pass
+
+        # other attributes
+        if allow_any_keys:
+            for attribute in self._attributes:
+                if attribute in ["bus", "branch", "gen", "gencost"]:
+                    continue
+                attribute_data = getattr(self, attribute)
+                if isinstance(attribute_data, (pd.DataFrame, pd.Series)):
+                    # check if index is a RangeIndex
+                    if attribute_data.index.dtype == int:
+                        # replace the index with a new RangeIndex starting at 1
+                        attribute_data.set_index(
+                            pd.RangeIndex(start=1, stop=len(attribute_data) + 1),
+                            drop=False,
+                            inplace=True,
+                        )
 
     def infer_numpy(self):
         """
