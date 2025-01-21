@@ -23,9 +23,11 @@ class CaseFrames:
     def __init__(
         self,
         data=None,
-        update_index=True,
         load_case_engine=None,
+        prefix="",
+        suffix="",
         allow_any_keys=False,
+        update_index=True,
         columns_templates=None,
     ):
         """
@@ -33,7 +35,7 @@ class CaseFrames:
 
         Args:
             data (str | dict | oct2py.io.Struct | np.ndarray):
-                - str: File path to .m file or MATPOWER case name.
+                - str: File path to MATPOWER case name, .m file, or .xlsx file.
                 - dict: Data from a structured dictionary.
                 - oct2py.io.Struct: Octave's oct2py struct.
                 - np.ndarray: Structured NumPy array with named fields.
@@ -47,30 +49,60 @@ class CaseFrames:
             TypeError: If the input data format is unsupported.
             FileNotFoundError: If the specified file cannot be found.
         """
-        # TODO: support read excel
+        # TODO: support read directory containing csv
         # TODO: support Path object
         if columns_templates is None:
             self.columns_templates = copy.deepcopy(COLUMNS)
         else:
             self.columns_templates = {**COLUMNS, **columns_templates}
 
+        self._read_data(
+            data=data,
+            load_case_engine=load_case_engine,
+            prefix=prefix,
+            suffix=suffix,
+            allow_any_keys=allow_any_keys,
+        )
+        if update_index and self._attributes:
+            self._update_index(allow_any_keys=allow_any_keys)
+
+    def _read_data(
+        self,
+        data=None,
+        load_case_engine=None,
+        prefix="",
+        suffix="",
+        allow_any_keys=False,
+    ):
         if isinstance(data, str):
             # TYPE: str of path
             path = self._get_path(data)
+            path_no_ext, ext = os.path.splitext(path)
 
-            if load_case_engine is None:
-                # read with matpower parser
-                self._read_matpower(
+            if ext == ".m":
+                # read `.m` file
+                if load_case_engine is None:
+                    # read with matpower parser
+                    self._read_matpower(
+                        filepath=path,
+                        allow_any_keys=allow_any_keys,
+                    )
+                else:
+                    # read using loadcase
+                    mpc = load_case_engine.loadcase(path)
+                    self._read_oct2py_struct(
+                        struct=mpc,
+                        allow_any_keys=allow_any_keys,
+                    )
+            if ext == ".xlsx":
+                # read `.xlsx` file
+                self._read_excel(
                     filepath=path,
+                    prefix=prefix,
+                    suffix=suffix,
                     allow_any_keys=allow_any_keys,
                 )
-            else:
-                # read using loadcase
-                mpc = load_case_engine.loadcase(path)
-                self._read_oct2py_struct(
-                    struct=mpc,
-                    allow_any_keys=allow_any_keys,
-                )
+                self.name = os.path.basename(path_no_ext)
 
         elif isinstance(data, dict):
             # TYPE: dict | oct2py.io.Struct
@@ -92,16 +124,12 @@ class CaseFrames:
         elif data is None:
             self.name = ""
             self._attributes = []
-            update_index = False
         else:
             message = (
                 f"Not supported source type {type(data)}. Data must be a str path to"
                 f" .m file, or oct2py.io.Struct, dict, or structured NumPy array."
             )
             raise TypeError(message)
-
-        if update_index:
-            self._update_index()
 
     def setattr_as_df(self, name, value, columns_template=None):
         """
@@ -137,13 +165,21 @@ class CaseFrames:
         Raises:
             FileNotFoundError: If the file or MATPOWER case cannot be found.
         """
+        # file exist on path
         if os.path.isfile(path):
             return path
 
+        # file exist on path if given a `.m` ext
         path_added_m = path + ".m"
         if os.path.isfile(path_added_m):
             return path_added_m
 
+        # file exist on path if given a `.xlsx` ext
+        path_added_xlsx = path + ".xlsx"
+        if os.path.isfile(path_added_xlsx):
+            return path_added_xlsx
+
+        # looking file in matpower-pip directory
         if MATPOWER_EXIST:
             path_added_matpower = os.path.join(matpower.path_matpower, f"data/{path}")
             if os.path.isfile(path_added_matpower):
@@ -241,6 +277,54 @@ class CaseFrames:
 
             self.setattr(attribute, value)
 
+    def _read_excel(self, filepath, prefix="", suffix="", allow_any_keys=False):
+        """
+        Read data from an Excel file.
+
+        Args:
+            filepath (str): File path for the Excel file.
+            prefix (str): Sheet prefix for each attribute in the Excel file.
+            suffix (str): Sheet suffix for each attribute in the Excel file.
+        """
+        sheets = pd.read_excel(filepath, index_col=0, sheet_name=None)
+
+        self._attributes = []
+
+        # info sheet to extract general metadata
+        info_sheet_name = f"{prefix}info{suffix}"
+        if info_sheet_name in sheets:
+            info_data = sheets[info_sheet_name]
+
+            value = info_data.loc["version", "INFO"].item()
+            self.setattr("version", value)
+
+            value = info_data.loc["baseMVA", "INFO"].item()
+            self.setattr("baseMVA", value)
+
+        # iterate through the remaining sheets
+        for attribute, sheet_data in sheets.items():
+            # skip the info sheet
+            if attribute == info_sheet_name:
+                continue
+
+            # remove prefix and suffix to get the attribute name
+            if prefix and attribute.startswith(prefix):
+                attribute = attribute[len(prefix) :]
+            if suffix and attribute.endswith(suffix):
+                attribute = attribute[: -len(suffix)]
+
+            # check attribute rule
+            if attribute not in ATTRIBUTES and not allow_any_keys:
+                continue
+
+            if attribute in ["bus_name", "branch_name", "gen_name"]:
+                # convert back to an index
+                value = pd.Index(sheet_data[attribute].values.tolist(), name=attribute)
+            else:
+                value = sheet_data
+
+            self.setattr(attribute, value)
+
     def _get_dataframe(self, attribute, data, n_cols=None, columns_template=None):
         """
         Create a DataFrame with proper columns from raw data.
@@ -294,40 +378,51 @@ class CaseFrames:
         """
         return self._attributes
 
-    def _update_index(self):
+    def _update_index(self, allow_any_keys=False):
         """
-        Update the index of the bus, branch, and generator tables based on naming.
+        Update the index of the bus, branch, and generator tables based on naming. If
+        naming is not available, index start from 1 to N.
         """
-        if "bus_name" in self._attributes:
-            self.bus.set_index(self.bus_name, drop=False, inplace=True)
-        else:
-            self.bus.set_index(
-                pd.RangeIndex(1, len(self.bus.index) + 1), drop=False, inplace=True
-            )
-
-        if "branch_name" in self._attributes:
-            self.branch.set_index(self.branch_name, drop=False, inplace=True)
-        else:
-            self.branch.set_index(
-                pd.RangeIndex(1, len(self.branch.index) + 1), drop=False, inplace=True
-            )
-
-        if "gen_name" in self._attributes:
-            self.gen.set_index(self.gen_name, drop=False, inplace=True)
+        for attribute, attribute_name in zip(
+            ["bus", "branch", "gen"], ["bus_name", "branch_name", "gen_name"]
+        ):
+            attribute_data = getattr(self, attribute)
             try:
-                self.gencost.set_index(self.gen_name, drop=False, inplace=True)
+                attribute_name_data = getattr(self, attribute_name)
+                attribute_data.set_index(attribute_name_data, drop=False, inplace=True)
             except AttributeError:
-                pass
-        else:
-            self.gen.set_index(
-                pd.RangeIndex(1, len(self.gen.index) + 1), drop=False, inplace=True
-            )
-            try:
+                attribute_data.set_index(
+                    pd.RangeIndex(1, len(attribute_data.index) + 1),
+                    drop=False,
+                    inplace=True,
+                )
+
+        # gencost is optional
+        try:
+            if "gen_name" in self._attributes:
+                self.gencost.set_index(self.gen_name, drop=False, inplace=True)
+            else:
                 self.gencost.set_index(
                     pd.RangeIndex(1, len(self.gen.index) + 1), drop=False, inplace=True
                 )
-            except AttributeError:
-                pass
+        except AttributeError:
+            pass
+
+        # other attributes
+        if allow_any_keys:
+            for attribute in self._attributes:
+                if attribute in ["bus", "branch", "gen", "gencost"]:
+                    continue
+                attribute_data = getattr(self, attribute)
+                if isinstance(attribute_data, (pd.DataFrame, pd.Series)):
+                    # check if index is a RangeIndex
+                    if attribute_data.index.dtype == int:
+                        # replace the index with a new RangeIndex starting at 1
+                        attribute_data.set_index(
+                            pd.RangeIndex(start=1, stop=len(attribute_data) + 1),
+                            drop=False,
+                            inplace=True,
+                        )
 
     def infer_numpy(self):
         """
