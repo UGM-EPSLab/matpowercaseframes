@@ -296,7 +296,7 @@ class CaseFrames:
             info_data = sheets[info_sheet_name]
 
             value = info_data.loc["version", "INFO"].item()
-            self.setattr("version", value)
+            self.setattr("version", str(value))
 
             value = info_data.loc["baseMVA", "INFO"].item()
             self.setattr("baseMVA", value)
