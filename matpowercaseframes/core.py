@@ -75,6 +75,7 @@ class CaseFrames:
         allow_any_keys=False,
     ):
         if isinstance(data, str):
+            # TODO: support Path
             # TYPE: str of path
             path = self._get_path(data)
             path_no_ext, ext = os.path.splitext(path)
@@ -94,7 +95,7 @@ class CaseFrames:
                         struct=mpc,
                         allow_any_keys=allow_any_keys,
                     )
-            if ext == ".xlsx":
+            elif ext == ".xlsx":
                 # read `.xlsx` file
                 self._read_excel(
                     filepath=path,
@@ -103,6 +104,10 @@ class CaseFrames:
                     allow_any_keys=allow_any_keys,
                 )
                 self.name = os.path.basename(path_no_ext)
+            else:
+                # TODO: support read directory of csv for schema and .csv data
+                message = f"Can't find data at {data}"
+                raise FileNotFoundError(message)
 
         elif isinstance(data, dict):
             # TYPE: dict | oct2py.io.Struct
@@ -165,6 +170,8 @@ class CaseFrames:
         Raises:
             FileNotFoundError: If the file or MATPOWER case cannot be found.
         """
+        # TODO: support read directory of csv for schema and .csv data
+
         # file exist on path
         if os.path.isfile(path):
             return path
@@ -214,7 +221,7 @@ class CaseFrames:
                 continue
 
             # TODO: compare with GridCal approach
-            list_ = parse_file(attribute, string)
+            list_ = parse_file(attribute, string)  # list_ in nested list array
             if list_ is not None:
                 if attribute == "version" or attribute == "baseMVA":
                     value = list_[0][0]
@@ -341,7 +348,7 @@ class CaseFrames:
             IndexError:
                 If the number of columns in the data exceeds the expected number.
         """
-
+        data = np.atleast_2d(data)
         if n_cols is None:
             n_cols = data.shape[1]
 
@@ -461,6 +468,18 @@ class CaseFrames:
         df[columns] = df[columns].astype(bool)
         return df
 
+    def add_schema_case(self, F=None):
+        # add case to follow casefromat/schema
+        # !WARNING:
+        # this might be deprecated in the future if matpower define this later
+        case_name = getattr(self, "name", "")
+        version = getattr(self, "version", None)
+        baseMVA = getattr(self, "baseMVA", None)
+        if F:
+            self.setattr_as_df("case", [[case_name, version, baseMVA, F]])
+        else:
+            self.setattr_as_df("case", [[case_name, version, baseMVA]])
+
     def to_pu(self):
         """
         Create a new CaseFrame object with data in p.u. and rad.
@@ -565,7 +584,7 @@ class CaseFrames:
                         writer, sheet_name=f"{prefix}{attribute}{suffix}"
                     )
 
-    def to_csv(self, path, prefix="", suffix=""):
+    def to_csv(self, path, prefix="", suffix="", attributes=None):
         """
         Save the CaseFrames data into multiple CSV files.
 
@@ -632,3 +651,18 @@ class CaseFrames:
             dict: MATPOWER-compatible dictionary with data.
         """
         return self.to_dict()
+
+    def to_schema(self, path, prefix="", suffix=""):
+        """
+        Convert to format compatible with caseformat/schema.
+
+        This method also mutate the CaseFormat by adding "case" as a new
+        attribute if not exists.
+
+        See more:
+            https://github.com/caseformat/schema
+        """
+
+        if "case" not in self._attributes:
+            self.add_schema_case()
+        self.to_csv(path, prefix=prefix, suffix=suffix)
