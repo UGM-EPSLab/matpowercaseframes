@@ -14,6 +14,7 @@ ATTRIBUTES = (
     "gen_name",
     "dcline",
     "dclinecost",
+    "case",
 )
 
 COLUMNS = {
@@ -121,6 +122,7 @@ COLUMNS = {
     "bus_name": ["BUS_NAME"],
     "branch_name": ["BRANCH_NAME"],
     "gen_name": ["GEN_NAME"],
+    "case": ["CASENAME", "VERSION", "BASE_MVA", "F"],
 }
 
 # TODO:

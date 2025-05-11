@@ -177,6 +177,14 @@ def test_to_csv():
     cf.to_csv("tests/results/case118_prefix_suffix", prefix="mpc.", suffix="_test")
 
 
+def test_to_schema():
+    cf = CaseFrames(CASE_PATH_CASE9)
+    cf.to_schema("tests/results/case9/schema")
+
+    cf = CaseFrames(CASE_PATH_CASE118)
+    cf.to_schema("tests/results/case118/schema")
+
+
 def test_to_dict():
     cf = CaseFrames(CASE_PATH_CASE9)
     cf.to_dict()
