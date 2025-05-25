@@ -253,6 +253,7 @@ class CaseFrames:
             elif attribute in ["bus_name", "branch_name", "gen_name"]:
                 value = pd.Index([name[0] for name in list_], name=attribute)
             else:  # bus, branch, gen, gencost, dcline, dclinecost
+                list_ = np.atleast_2d(list_)
                 n_cols = list_.shape[1]
                 value = self._get_dataframe(attribute, list_, n_cols)
 
