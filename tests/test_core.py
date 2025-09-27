@@ -193,3 +193,26 @@ def test_to_dict():
 def test_to_mpc():
     cf = CaseFrames(CASE_PATH_CASE9)
     cf.to_mpc()
+
+
+def test_reset_index_and_infer_numpy_case9():
+    cf = CaseFrames(CASE_PATH_CASE9)
+    cf.infer_numpy()
+
+    # original bus IDs are 1-based in MATPOWER
+    assert cf.bus["BUS_I"].iloc[0] == 1
+    assert cf.branch["F_BUS"].min() >= 1
+    assert cf.gen["GEN_BUS"].min() >= 1
+
+    # apply renumbering
+    cf.reset_index()
+
+    # after reset, BUS_I must be contiguous 0..n-1
+    assert np.array_equal(cf.bus["BUS_I"].values, np.arange(len(cf.bus)))
+
+    # branch endpoints must now reference 0..n-1
+    assert cf.branch["F_BUS"].between(0, len(cf.bus) - 1).all()
+    assert cf.branch["T_BUS"].between(0, len(cf.bus) - 1).all()
+
+    # gen buses must also reference 0..n-1
+    assert cf.gen["GEN_BUS"].between(0, len(cf.bus) - 1).all()

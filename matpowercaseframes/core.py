@@ -469,6 +469,35 @@ class CaseFrames:
         df[columns] = df[columns].astype(bool)
         return df
 
+    def reset_index(self):
+        """
+        Reset indices and remap bus-related indices to 0-based values.
+
+        This method ensures that:
+            1. All DataFrames in the case have their row indices reset.
+            2. Bus numbers (BUS_I) are renumbered from 0 to n-1.
+            3. References to buses in branch (F_BUS, T_BUS) and gen (GEN_BUS) tables
+            are updated consistently with the new numbering.
+
+        Notes:
+            - This method requires `infer_numpy` to be called beforehand,
+            as mapping does not support float-backed integers.
+            - Support for additional tables (e.g., dcline) is not yet implemented.
+
+        Returns:
+            None: The CaseFrames object is modified in place.
+        """
+        for attribute in self._attributes:
+            df = getattr(self, attribute)
+            if isinstance(df, pd.DataFrame):
+                df.reset_index(drop=True, inplace=True)
+        bus_map = {v: k for k, v in enumerate(self.bus["BUS_I"])}
+        self.bus["BUS_I"] = self.bus.index
+        self.branch[["F_BUS", "T_BUS"]] = self.branch[["F_BUS", "T_BUS"]].replace(
+            bus_map
+        )
+        self.gen["GEN_BUS"] = self.gen["GEN_BUS"].replace(bus_map)
+
     def add_schema_case(self, F=None):
         # add case to follow casefromat/schema
         # !WARNING:
