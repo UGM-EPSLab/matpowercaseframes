@@ -1,4 +1,19 @@
-# Contirbuting
+# Contributing
+
+## env
+
+```sh
+uv venv env --python 3.14
+source env/bin/activate
+uv pip install pip
+```
+
+## packages
+
+```sh
+pip install pru
+pru -r requirements-all.txt
+```
 
 ## Install in development mode
 
