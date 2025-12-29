@@ -78,37 +78,46 @@ class CaseFrames:
             # TODO: support Path
             # TYPE: str of path
             path = self._get_path(data)
-            path_no_ext, ext = os.path.splitext(path)
 
-            if ext == ".m":
-                # read `.m` file
-                if load_case_engine is None:
-                    # read with matpower parser
-                    self._read_matpower(
-                        filepath=path,
-                        allow_any_keys=allow_any_keys,
-                    )
-                else:
-                    # read using loadcase
-                    mpc = load_case_engine.loadcase(path)
-                    self._read_oct2py_struct(
-                        struct=mpc,
-                        allow_any_keys=allow_any_keys,
-                    )
-            elif ext == ".xlsx":
-                # read `.xlsx` file
-                self._read_excel(
-                    filepath=path,
+            # check if path is a directory (for CSV files)
+            if os.path.isdir(path):
+                self._read_csv_dir(
+                    dirpath=path,
                     prefix=prefix,
                     suffix=suffix,
                     allow_any_keys=allow_any_keys,
                 )
-                self.name = os.path.basename(path_no_ext)
+                self.name = os.path.basename(path)
             else:
-                # TODO: support read directory of csv for schema and .csv data
-                message = f"Can't find data at {data}"
-                raise FileNotFoundError(message)
+                path_no_ext, ext = os.path.splitext(path)
 
+                if ext == ".m":
+                    # read `.m` file
+                    if load_case_engine is None:
+                        # read with matpower parser
+                        self._read_matpower(
+                            filepath=path,
+                            allow_any_keys=allow_any_keys,
+                        )
+                    else:
+                        # read using loadcase
+                        mpc = load_case_engine.loadcase(path)
+                        self._read_oct2py_struct(
+                            struct=mpc,
+                            allow_any_keys=allow_any_keys,
+                        )
+                elif ext == ".xlsx":
+                    # read `.xlsx` file
+                    self._read_excel(
+                        filepath=path,
+                        prefix=prefix,
+                        suffix=suffix,
+                        allow_any_keys=allow_any_keys,
+                    )
+                    self.name = os.path.basename(path_no_ext)
+                else:
+                    message = f"Can't find data at {os.path.abspath(data)}"
+                    raise FileNotFoundError(message)
         elif isinstance(data, dict):
             # TYPE: dict | oct2py.io.Struct
             self._read_oct2py_struct(
@@ -162,15 +171,17 @@ class CaseFrames:
         Determine the correct file path for the given input.
 
         Args:
-            path (str): File path or MATPOWER case name.
+            path (str): File path, directory path, or MATPOWER case name.
 
         Returns:
-            str: Resolved file path.
+            str: Resolved file path or directory path.
 
         Raises:
             FileNotFoundError: If the file or MATPOWER case cannot be found.
         """
-        # TODO: support read directory of csv for schema and .csv data
+        # directory exist on path (for CSV directory)
+        if os.path.isdir(path):
+            return path
 
         # file exist on path
         if os.path.isfile(path):
@@ -198,7 +209,9 @@ class CaseFrames:
             if os.path.isfile(path_added_matpower_m):
                 return path_added_matpower_m
 
-        raise FileNotFoundError
+        # Create detailed error message
+        error_msg = f"Could not find file or directory '{path}'."
+        raise FileNotFoundError(error_msg)
 
     def _read_matpower(self, filepath, allow_any_keys=False):
         """
@@ -324,6 +337,64 @@ class CaseFrames:
             # check attribute rule
             if attribute not in ATTRIBUTES and not allow_any_keys:
                 continue
+
+            if attribute in ["bus_name", "branch_name", "gen_name"]:
+                # convert back to an index
+                value = pd.Index(sheet_data[attribute].values.tolist(), name=attribute)
+            else:
+                value = sheet_data
+
+            self.setattr(attribute, value)
+
+    def _read_csv_dir(self, dirpath, prefix="", suffix="", allow_any_keys=False):
+        """
+        Read data from a directory of CSV files.
+
+        Args:
+            dirpath (str): Directory path containing the CSV files.
+            prefix (str): File prefix for each attribute CSV file.
+            suffix (str): File suffix for each attribute CSV file.
+            allow_any_keys (bool): Whether to allow any keys beyond ATTRIBUTES.
+        """
+        # create a dictionary mapping attribute names to file paths
+        csv_data = {}
+        for csv_file in os.listdir(dirpath):
+            if csv_file.endswith(".csv"):
+                # remove prefix and suffix to get the attribute name
+                attribute = csv_file[:-4]  # remove '.csv' extension
+
+                if prefix and attribute.startswith(prefix):
+                    attribute = attribute[len(prefix) :]
+                if suffix and attribute.endswith(suffix):
+                    attribute = attribute[: -len(suffix)]
+
+                csv_data[attribute] = os.path.join(dirpath, csv_file)
+
+        self._attributes = []
+
+        # info CSV to extract general metadata
+        info_name = "info"
+        if info_name in csv_data:
+            info_data = pd.read_csv(csv_data[info_name], index_col=0)
+
+            value = info_data.loc["version", "INFO"].item()
+            self.setattr("version", str(value))
+
+            value = info_data.loc["baseMVA", "INFO"].item()
+            self.setattr("baseMVA", value)
+
+        # iterate through the remaining CSV files
+        for attribute, filepath in csv_data.items():
+            # skip the info file
+            if attribute == info_name:
+                continue
+
+            # check attribute rule
+            if attribute not in ATTRIBUTES and not allow_any_keys:
+                continue
+
+            # read CSV file
+            sheet_data = pd.read_csv(filepath, index_col=0)
 
             if attribute in ["bus_name", "branch_name", "gen_name"]:
                 # convert back to an index
