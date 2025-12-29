@@ -144,3 +144,6 @@ dmypy.json
 
 # Mac
 .DS_Store
+
+# test
+tests/data/*.xlsx

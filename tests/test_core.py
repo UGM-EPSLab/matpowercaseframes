@@ -15,30 +15,29 @@ CASE_NAME_CASE9 = "case9.m"
 CURDIR = os.path.realpath(os.path.dirname(__file__))
 CASE_DIR = os.path.join(os.path.dirname(CURDIR), "data")
 CASE_PATH_CASE9 = os.path.join(CASE_DIR, CASE_NAME_CASE9)
+ATTRIBUTES_CASE9 = ["version", "baseMVA", "bus", "gen", "branch", "gencost"]
 
 CASE_NAME_CASE118 = "case118.m"
 CURDIR = os.path.realpath(os.path.dirname(__file__))
 CASE_DIR = os.path.join(os.path.dirname(CURDIR), "data")
 CASE_PATH_CASE118 = os.path.join(CASE_DIR, CASE_NAME_CASE118)
+ATTRIBUTES_CASE118 = [
+    "version",
+    "baseMVA",
+    "bus",
+    "gen",
+    "branch",
+    "gencost",
+    "bus_name",
+]
+ATTRIBUTES_CASE = {
+    "case9": ATTRIBUTES_CASE9,
+    "case118": ATTRIBUTES_CASE118,
+}
 
 
 def test_input_str_path():
     CaseFrames(CASE_PATH_CASE9)
-
-
-def test_read_excel():
-    CASE_NAME = "tests/data/case118_test_to_xlsx.xlsx"
-    cf = CaseFrames(CASE_NAME)
-    for attribute in [
-        "version",
-        "baseMVA",
-        "bus",
-        "gen",
-        "branch",
-        "gencost",
-        "bus_name",
-    ]:
-        assert attribute in cf.attributes
 
 
 def test_input_oct2py_io_Struct():
@@ -149,40 +148,107 @@ def test_get_attributes():
 #   pytest -n auto --durations=0
 
 
-def test_to_xlsx():
-    cf = CaseFrames(CASE_PATH_CASE9)
-    cf.to_excel("tests/results/case9/case9_test_to_xlsx.xlsx")
-    cf.to_excel(
-        "tests/results/case9_prefix_suffix/case9_test_to_xlsx_prefix_suffix.xlsx",
-        prefix="mpc.",
-        suffix="_test",
-    )
+@pytest.mark.parametrize(
+    "case_path,attributes,output_path,prefix,suffix",
+    [
+        (
+            CASE_PATH_CASE9,
+            ATTRIBUTES_CASE9,
+            "tests/results/case9/case9_test_to_xlsx.xlsx",
+            "",
+            "",
+        ),
+        (
+            CASE_PATH_CASE9,
+            ATTRIBUTES_CASE9,
+            "tests/results/case9_prefix_suffix/case9_test_to_xlsx_prefix_suffix.xlsx",
+            "mpc.",
+            "_test",
+        ),
+        (
+            CASE_PATH_CASE118,
+            ATTRIBUTES_CASE118,
+            "tests/results/case118/case118_test_to_xlsx.xlsx",
+            "",
+            "",
+        ),
+        (
+            CASE_PATH_CASE118,
+            ATTRIBUTES_CASE118,
+            "tests/results/case118_prefix_suffix/case118_test_to_xlsx_prefix_suffix.xlsx",
+            "mpc.",
+            "_test",
+        ),
+    ],
+    ids=["case9", "case9_prefix_suffix", "case118", "case118_prefix_suffix"],
+)
+def test_to_and_read_xlsx(case_path, attributes, output_path, prefix, suffix):
+    cf = CaseFrames(case_path)  # read .m file
+    cf.to_excel(output_path, prefix=prefix, suffix=suffix)  # write to .xlsx file
+    cf = CaseFrames(
+        output_path, prefix=prefix, suffix=suffix
+    )  # read back from .xlsx file
+    for attribute in attributes:
+        assert attribute in cf.attributes, (
+            f"Missing attribute '{attribute}' in {cf.attributes}"
+        )
 
-    cf = CaseFrames(CASE_PATH_CASE118)
-    cf.to_excel("tests/results/case118/case118_test_to_xlsx.xlsx")
-    cf.to_excel(
-        "tests/results/case118_prefix_suffix/case118_test_to_xlsx_prefix_suffix.xlsx",
-        prefix="mpc.",
-        suffix="_test",
-    )
+
+@pytest.mark.parametrize(
+    "case_path,attributes,output_dir,prefix,suffix",
+    [
+        (CASE_PATH_CASE9, ATTRIBUTES_CASE9, "tests/results/case9", "", ""),
+        (
+            CASE_PATH_CASE9,
+            ATTRIBUTES_CASE9,
+            "tests/results/case9_prefix_suffix",
+            "mpc.",
+            "_test",
+        ),
+        (CASE_PATH_CASE118, ATTRIBUTES_CASE118, "tests/results/case118", "", ""),
+        (
+            CASE_PATH_CASE118,
+            ATTRIBUTES_CASE118,
+            "tests/results/case118_prefix_suffix",
+            "mpc.",
+            "_test",
+        ),
+    ],
+    ids=["case9", "case9_prefix_suffix", "case118", "case118_prefix_suffix"],
+)
+def test_to_and_read_csv(case_path, attributes, output_dir, prefix, suffix):
+    cf = CaseFrames(case_path)  # read .m file
+    cf.to_csv(output_dir, prefix=prefix, suffix=suffix)  # write to .csv directory
+    cf = CaseFrames(
+        output_dir, prefix=prefix, suffix=suffix
+    )  # read back from .csv directory
+    for attribute in attributes:
+        assert attribute in cf.attributes, (
+            f"Missing attribute '{attribute}' in {cf.attributes}"
+        )
 
 
-def test_to_csv():
-    cf = CaseFrames(CASE_PATH_CASE9)
-    cf.to_csv("tests/results/case9")
-    cf.to_csv("tests/results/case9_prefix_suffix", prefix="mpc.", suffix="_test")
+@pytest.mark.parametrize(
+    "case_path,schema_dir,case_name",
+    [
+        (CASE_PATH_CASE9, "tests/results/case9/schema", "case9"),
+        (CASE_PATH_CASE118, "tests/results/case118/schema", "case118"),
+    ],
+    ids=["case9", "case118"],
+)
+def test_to_schema(case_path, schema_dir, case_name):
+    cf = CaseFrames(case_path)
+    cf.to_schema(schema_dir)
+    assert os.path.isdir(schema_dir), f"Schema directory '{schema_dir}' was not created"
 
-    cf = CaseFrames(CASE_PATH_CASE118)
-    cf.to_csv("tests/results/case118")
-    cf.to_csv("tests/results/case118_prefix_suffix", prefix="mpc.", suffix="_test")
+    schema_files = os.listdir(schema_dir)
+    assert len(schema_files) > 0, f"No schema files found in '{schema_dir}'"
 
-
-def test_to_schema():
-    cf = CaseFrames(CASE_PATH_CASE9)
-    cf.to_schema("tests/results/case9/schema")
-
-    cf = CaseFrames(CASE_PATH_CASE118)
-    cf.to_schema("tests/results/case118/schema")
+    cf = CaseFrames(schema_dir)
+    for attribute in ATTRIBUTES_CASE[case_name]:
+        assert attribute in cf.attributes, (
+            f"Missing attribute '{attribute}' in {cf.attributes}"
+        )
 
 
 def test_to_dict():
