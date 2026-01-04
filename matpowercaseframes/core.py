@@ -4,6 +4,7 @@
 
 import copy
 import os
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -442,7 +443,21 @@ class CaseFrames:
                 )
                 raise IndexError(msg)
             NCOST = n_cols - len(columns)
-            first_row_model = int(data[0, 0])  # TODO: support mixed models
+            # Warning if mixed models exist
+            gencost_models = data[:, 0]
+            first_row_model = int(gencost_models[0])  # TODO: support mixed models
+            unique_models = np.unique(gencost_models).astype(int)
+
+            if len(unique_models) > 1:
+                warnings.warn(
+                    f"Mixed cost models detected in {attribute}: "
+                    f"{unique_models.tolist()}. "
+                    f"Using model type {first_row_model} from first row. "
+                    "Mixed models are not fully supported.",
+                    UserWarning,
+                    stacklevel=2,
+                )
+
             if first_row_model == 1:  # PW_LINEAR
                 ncost_cols = [
                     f"{prefix}{i}"
@@ -451,7 +466,7 @@ class CaseFrames:
                 ]
                 columns = columns + ncost_cols
             else:  # POLYNOMIAL
-                columns = columns + [f"C_{i}" for i in range(NCOST - 1, -1, -1)]
+                columns = columns + [f"C{i}" for i in range(NCOST - 1, -1, -1)]
 
         return pd.DataFrame(data, columns=columns)
 

@@ -27,7 +27,9 @@ def assert_cf_equal(cf1, cf2):
 
 def test_case9():
     CASE_NAME = "case9.m"
-    CaseFrames(CASE_NAME)
+    cf = CaseFrames(CASE_NAME)
+    cols = pd.Index(["MODEL", "STARTUP", "SHUTDOWN", "NCOST", "C2", "C1", "C0"])
+    assert cf.gencost.columns.equals(cols)
 
 
 def test_case4_dist():
@@ -55,6 +57,50 @@ def test_case118():
 
     assert_cf_equal(cf, cf_lc)
     assert_cf_equal(cf, cf_mpc)
+
+
+def test_case_RTS_GMLC():
+    # NOTE: case with gencost piecewise linear
+    m = start_instance()
+
+    # TODO: test read without load_case_engine
+    CASE_NAME = "case_RTS_GMLC.m"
+    # cf = CaseFrames(CASE_NAME)
+    cf_lc = CaseFrames(CASE_NAME, load_case_engine=m)
+
+    cols = pd.Index(
+        [
+            "MODEL",
+            "STARTUP",
+            "SHUTDOWN",
+            "NCOST",
+            "X1",
+            "Y1",
+            "X2",
+            "Y2",
+            "X3",
+            "Y3",
+            "X4",
+            "Y4",
+        ]
+    )
+    assert cf_lc.gencost.columns.equals(cols)
+
+    # mpc = m.loadcase(CASE_NAME)
+    # cf_mpc = CaseFrames(mpc)
+
+    # # TODO: debug infer_numpy warning
+    # cf.infer_numpy()
+    # cf_lc.infer_numpy()
+    # cf_mpc.infer_numpy()
+
+    # mpc = m.runpf(cf.to_mpc(), verbose=False)
+    # _ = CaseFrames(mpc)
+
+    m.exit()
+
+    # assert_cf_equal(cf, cf_lc)
+    # assert_cf_equal(cf, cf_mpc)
 
 
 def test_t_case9_dcline():
