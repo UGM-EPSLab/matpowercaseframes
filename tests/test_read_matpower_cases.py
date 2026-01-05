@@ -1,3 +1,5 @@
+import warnings
+
 import pandas as pd
 from matpower import path_matpower, start_instance
 from pandas.testing import assert_frame_equal, assert_index_equal
@@ -65,8 +67,15 @@ def test_case_RTS_GMLC():
 
     # TODO: test read without load_case_engine
     CASE_NAME = "case_RTS_GMLC.m"
-    # cf = CaseFrames(CASE_NAME)
+    cf = CaseFrames(CASE_NAME)
     cf_lc = CaseFrames(CASE_NAME, load_case_engine=m)
+
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore", category=RuntimeWarning, message=".*invalid value.*"
+        )
+        cf.infer_numpy()
+        cf_lc.infer_numpy()
 
     cols = pd.Index(
         [
@@ -84,23 +93,12 @@ def test_case_RTS_GMLC():
             "Y4",
         ]
     )
+    assert cf.gencost.columns.equals(cols)
     assert cf_lc.gencost.columns.equals(cols)
 
-    # mpc = m.loadcase(CASE_NAME)
-    # cf_mpc = CaseFrames(mpc)
-
-    # # TODO: debug infer_numpy warning
-    # cf.infer_numpy()
-    # cf_lc.infer_numpy()
-    # cf_mpc.infer_numpy()
-
-    # mpc = m.runpf(cf.to_mpc(), verbose=False)
-    # _ = CaseFrames(mpc)
+    assert_cf_equal(cf, cf_lc)
 
     m.exit()
-
-    # assert_cf_equal(cf, cf_lc)
-    # assert_cf_equal(cf, cf_mpc)
 
 
 def test_t_case9_dcline():
