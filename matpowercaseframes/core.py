@@ -4,6 +4,7 @@
 
 import copy
 import os
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -209,9 +210,8 @@ class CaseFrames:
             if os.path.isfile(path_added_matpower_m):
                 return path_added_matpower_m
 
-        # Create detailed error message
-        error_msg = f"Could not find file or directory '{path}'."
-        raise FileNotFoundError(error_msg)
+        message = f"Can't find data at {os.path.abspath(path)}"
+        raise FileNotFoundError(message)
 
     def _read_matpower(self, filepath, allow_any_keys=False):
         """
@@ -433,6 +433,8 @@ class CaseFrames:
             )
 
         columns = columns_template[:n_cols]
+
+        # special case for gencost and dclinecost
         if n_cols > len(columns):
             if attribute not in ("gencost", "dclinecost"):
                 msg = (
@@ -440,10 +442,31 @@ class CaseFrames:
                     f" than the expected number."
                 )
                 raise IndexError(msg)
-            columns = columns[:-1] + [
-                "{}_{}".format(columns[-1], i)
-                for i in range(n_cols - len(columns), -1, -1)
-            ]
+            NCOST = n_cols - len(columns)
+            # Warning if mixed models exist
+            gencost_models = data[:, 0]
+            first_row_model = int(gencost_models[0])  # TODO: support mixed models
+            unique_models = np.unique(gencost_models).astype(int)
+
+            if len(unique_models) > 1:
+                warnings.warn(
+                    f"Mixed cost models detected in {attribute}: "
+                    f"{unique_models.tolist()}. "
+                    f"Using model type {first_row_model} from first row. "
+                    "Mixed models are not fully supported.",
+                    UserWarning,
+                    stacklevel=2,
+                )
+
+            if first_row_model == 1:  # PW_LINEAR
+                ncost_cols = [
+                    f"{prefix}{i}"
+                    for i in range(1, (NCOST // 2) + 1)
+                    for prefix in ("X", "Y")
+                ]
+                columns = columns + ncost_cols
+            else:  # POLYNOMIAL
+                columns = columns + [f"C{i}" for i in range(NCOST - 1, -1, -1)]
 
         return pd.DataFrame(data, columns=columns)
 
