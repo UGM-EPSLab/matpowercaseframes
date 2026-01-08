@@ -84,6 +84,7 @@ m.exit()
 Furthermore, `matpowercaseframes` also support generating data that is acceptable by `matpower` via `matpower-pip` package (requires `matlab` or `octave`),
 
 ```python
+from matpower import start_instance
 from matpowercaseframes import CaseFrames
 
 case_path = 'case9.m'
