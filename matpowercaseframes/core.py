@@ -30,6 +30,7 @@ class CaseFrames:
         allow_any_keys=False,
         update_index=True,
         columns_templates=None,
+        reset_index=False,
     ):
         """
         Load data and initialize the CaseFrames class.
@@ -45,6 +46,19 @@ class CaseFrames:
             load_case_engine (object, optional):
                 External engine used to call MATPOWER `loadcase` (e.g. Octave). Defaults
                 to None. If None, parse data using matpowercaseframes.reader.parse_file.
+            prefix (str, optional):
+                Prefix for each attribute when reading from Excel or CSV directory.
+                Defaults to an empty string.
+            suffix (str, optional):
+                Suffix for each attribute when reading from Excel or CSV directory.
+                Defaults to an empty string.
+            allow_any_keys (bool, optional):
+                Whether to allow any keys beyond the predefined ATTRIBUTES. Defaults to
+                False.
+            columns_templates (dict, optional):
+                Custom column templates for DataFrames. Defaults to None.
+            reset_index (bool, optional):
+                Whether to reset indices to 0-based numbering. Defaults to False.
 
         Raises:
             TypeError: If the input data format is unsupported.
@@ -66,6 +80,8 @@ class CaseFrames:
         )
         if update_index and self._attributes:
             self._update_index(allow_any_keys=allow_any_keys)
+        if reset_index:
+            self.reset_index()
 
     def _read_data(
         self,
