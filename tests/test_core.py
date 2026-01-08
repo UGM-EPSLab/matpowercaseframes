@@ -292,5 +292,9 @@ def test_reset_index_and_infer_numpy_case9():
     assert cf_reset.branch["F_BUS"].between(0, len(cf_reset.bus) - 1).all()
     assert cf_reset.branch["T_BUS"].between(0, len(cf_reset.bus) - 1).all()
     assert cf_reset.gen["GEN_BUS"].between(0, len(cf_reset.bus) - 1).all()
+    assert_cf_equal(cf, cf_reset)
 
+    # reset multiple times should not change anything
+    cf_reset.reset_index()
+    cf_reset.reset_index()
     assert_cf_equal(cf, cf_reset)
