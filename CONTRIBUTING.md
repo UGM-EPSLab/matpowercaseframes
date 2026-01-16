@@ -5,20 +5,19 @@
 ```sh
 uv venv env --python 3.14
 source env/bin/activate
-uv pip install pip
 ```
 
 ## packages
 
 ```sh
-pip install pru
+uv pip install pru
 pru -r requirements-all.txt
 ```
 
 ## Install in development mode
 
 ```shell
-pip install -e ."[dev]"
+uv pip install -e ."[dev]"
 ```
 
 ## Pytest

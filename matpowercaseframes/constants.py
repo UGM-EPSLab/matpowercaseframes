@@ -15,6 +15,7 @@ ATTRIBUTES = (
     "dcline",
     "dclinecost",
     "case",
+    "reserves",
 )
 
 COLUMNS = {
@@ -112,6 +113,11 @@ COLUMNS = {
         "MU_QMINT",
         "MU_QMAXT",
     ],
+    "reserves": {
+        "req": ["PREQ"],
+        "cost": ["C1"],
+        "qty": ["PQTY"],
+    },
     "if": {
         # negative 'BRANCHIDX' defines opposite direction
         "map": ["IFNUM", "BRANCHIDX"],

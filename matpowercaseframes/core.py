@@ -20,6 +20,38 @@ except ImportError:
     MATPOWER_EXIST = False
 
 
+class ReservesFrames:
+    """A struct-like container for reserves data, similar to CaseFrames."""
+
+    def __init__(self, data=None):
+        """
+        Initialize ReservesFrames with optional data.
+
+        Args:
+            data (dict, optional): Dictionary containing reserves DataFrames.
+                Expected keys: 'zones', 'req', 'cost', 'qty'
+        """
+        self._attributes = []
+
+        if data is not None:
+            if isinstance(data, dict):
+                for key, value in data.items():
+                    self.setattr(key, value)
+            else:
+                raise TypeError(f"ReservesFrames data must be a dict, got {type(data)}")
+
+    def setattr(self, name, value):
+        """Set attribute and track it in _attributes list."""
+        if name not in self._attributes:
+            self._attributes.append(name)
+        self.__setattr__(name, value)
+
+    @property
+    def attributes(self):
+        """List of attributes in this ReservesFrames object."""
+        return self._attributes
+
+
 class CaseFrames:
     def __init__(
         self,
@@ -281,6 +313,9 @@ class CaseFrames:
                 value = list_
             elif attribute in ["bus_name", "branch_name", "gen_name"]:
                 value = pd.Index([name[0] for name in list_], name=attribute)
+            elif attribute in ["reserves"]:
+                dfs = reserves_data_to_dataframes(list_)
+                value = ReservesFrames(dfs)
             else:  # bus, branch, gen, gencost, dcline, dclinecost
                 list_ = np.atleast_2d(list_)
                 n_cols = list_.shape[1]
@@ -510,37 +545,52 @@ class CaseFrames:
                 attribute_data.set_index(attribute_name_data, drop=False, inplace=True)
             except AttributeError:
                 attribute_data.set_index(
-                    pd.RangeIndex(1, len(attribute_data.index) + 1),
+                    pd.RangeIndex(1, len(attribute_data.index) + 1, name=attribute),
                     drop=False,
                     inplace=True,
                 )
 
         # gencost is optional
+        # NOTE: try except is better than checking hasattr for common possitive
         try:
             if "gen_name" in self._attributes:
                 self.gencost.set_index(self.gen_name, drop=False, inplace=True)
             else:
                 self.gencost.set_index(
-                    pd.RangeIndex(1, len(self.gen.index) + 1), drop=False, inplace=True
+                    pd.RangeIndex(1, len(self.gen.index) + 1, name="gen"),
+                    drop=False,
+                    inplace=True,
                 )
         except AttributeError:
+            # for when self.gencost doesn't exist
             pass
+
+        # NOTE: try hasattr is better than try except for common negative
+        if hasattr(self, "reserves"):
+            self.reserves.zones.columns = pd.RangeIndex(
+                start=1, stop=len(self.gen.index) + 1, name="gen"
+            )
 
         # other attributes
         if allow_any_keys:
-            for attribute in self._attributes:
-                if attribute in ["bus", "branch", "gen", "gencost"]:
-                    continue
-                attribute_data = getattr(self, attribute)
-                if isinstance(attribute_data, (pd.DataFrame, pd.Series)):
-                    # check if index is a RangeIndex
-                    if attribute_data.index.dtype == int:
-                        # replace the index with a new RangeIndex starting at 1
-                        attribute_data.set_index(
-                            pd.RangeIndex(start=1, stop=len(attribute_data) + 1),
-                            drop=False,
-                            inplace=True,
-                        )
+            self._update_index_any()
+
+    def _update_index_any(self):
+        for attribute in self._attributes:
+            if attribute in ["bus", "branch", "gen", "gencost", "reserves"]:
+                continue
+            attribute_data = getattr(self, attribute)
+            if isinstance(attribute_data, (pd.DataFrame, pd.Series)):
+                # check if index is a RangeIndex
+                if attribute_data.index.dtype == int:
+                    # replace the index with a new RangeIndex starting at 1
+                    attribute_data.set_index(
+                        pd.RangeIndex(
+                            start=1, stop=len(attribute_data) + 1, name=attribute
+                        ),
+                        drop=False,
+                        inplace=True,
+                    )
 
     def infer_numpy(self):
         """
@@ -607,6 +657,10 @@ class CaseFrames:
             bus_map
         )
         self.gen["GEN_BUS"] = self.gen["GEN_BUS"].replace(bus_map)
+
+        # TODO:
+        #   Since mpc.reserves.zones columns use cf.gen.index, don't forget to update
+        # the columns of mpc.reserves.zones if exists.
 
     def add_schema_case(self, F=None):
         # add case to follow casefromat/schema
@@ -806,3 +860,42 @@ class CaseFrames:
         if "case" not in self._attributes:
             self.add_schema_case()
         self.to_csv(path, prefix=prefix, suffix=suffix)
+
+
+def reserves_data_to_dataframes(reserves):
+    """
+    Convert all mpc.reserves struct data to DataFrames.
+
+    Args:
+        reserves: Octave struct or dictionary of mpc.reserves object from MATPOWER
+
+    Returns:
+        Dictionary containing:
+            - 'zones': Reserve zones DataFrame
+            - 'req': Reserve requirements DataFrame
+            - 'cost': Reserve costs DataFrame (if exists)
+            - 'qty': Reserve quantities DataFrame (if exists)
+    """
+    dfs = {}
+    n_zones, n_gens = reserves.zones.shape
+    dfs["zones"] = pd.DataFrame(
+        reserves.zones,
+        index=pd.RangeIndex(start=1, stop=n_zones + 1, name="zone"),
+        columns=pd.RangeIndex(start=1, stop=n_gens + 1, name="gen"),
+    )
+    zone_sum = dfs["zones"].sum(axis=0)
+    idx_gen_with_reserves = zone_sum[zone_sum > 0].index
+    dfs["req"] = pd.DataFrame(
+        reserves.req,
+        index=pd.RangeIndex(start=1, stop=n_zones + 1, name="zone"),
+        columns=["PREQ"],
+    )
+    if hasattr(reserves, "cost"):
+        dfs["cost"] = pd.DataFrame(
+            reserves.cost, index=idx_gen_with_reserves, columns=["C1"]
+        )
+    if hasattr(reserves, "qty"):
+        dfs["qty"] = pd.DataFrame(
+            reserves.qty, index=idx_gen_with_reserves, columns=["PQTY"]
+        )
+    return dfs
