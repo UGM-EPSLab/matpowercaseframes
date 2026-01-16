@@ -510,7 +510,7 @@ class CaseFrames:
                 attribute_data.set_index(attribute_name_data, drop=False, inplace=True)
             except AttributeError:
                 attribute_data.set_index(
-                    pd.RangeIndex(1, len(attribute_data.index) + 1),
+                    pd.RangeIndex(1, len(attribute_data.index) + 1, name=attribute),
                     drop=False,
                     inplace=True,
                 )
@@ -521,7 +521,9 @@ class CaseFrames:
                 self.gencost.set_index(self.gen_name, drop=False, inplace=True)
             else:
                 self.gencost.set_index(
-                    pd.RangeIndex(1, len(self.gen.index) + 1), drop=False, inplace=True
+                    pd.RangeIndex(1, len(self.gen.index) + 1, name="gen"),
+                    drop=False,
+                    inplace=True,
                 )
         except AttributeError:
             pass
@@ -537,10 +539,15 @@ class CaseFrames:
                     if attribute_data.index.dtype == int:
                         # replace the index with a new RangeIndex starting at 1
                         attribute_data.set_index(
-                            pd.RangeIndex(start=1, stop=len(attribute_data) + 1),
+                            pd.RangeIndex(
+                                start=1, stop=len(attribute_data) + 1, name=attribute
+                            ),
                             drop=False,
                             inplace=True,
                         )
+
+        # TODO:
+        # For mpc.reserves.zones, the columns use cf.gen.index.
 
     def infer_numpy(self):
         """
@@ -607,6 +614,10 @@ class CaseFrames:
             bus_map
         )
         self.gen["GEN_BUS"] = self.gen["GEN_BUS"].replace(bus_map)
+
+        # TODO:
+        #   Since mpc.reserves.zones columns use cf.gen.index, don't forget to update
+        # the columns of mpc.reserves.zones if exists.
 
     def add_schema_case(self, F=None):
         # add case to follow casefromat/schema
