@@ -38,7 +38,67 @@ class DataFramesStruct:
         """
         if name not in self._attributes:
             self._attributes.append(name)
-        self.__setattr__(name, value)
+        super().__setattr__(name, value)
+
+    def to_dict(self):
+        """
+        Convert the DataFramesStruct data into a dictionary.
+
+
+        Returns:
+            dict: Dictionary with attribute names as keys and their data as values.
+        """
+        # TODO: support mpc = cf.to_dict() with reserves data
+        data = {}
+        for attribute in self._attributes:
+            value = getattr(self, attribute)
+            if isinstance(value, pd.DataFrame):
+                data[attribute] = value.values.tolist()
+            elif isinstance(value, DataFramesStruct):
+                data[attribute] = value.to_dict()
+            else:
+                data[attribute] = value
+
+        return data
+
+    def infer_numpy(self):
+        """
+        Infer and convert data types in all DataFrames to appropriate NumPy-compatible
+        types.
+        """
+        for attribute in self._attributes:
+            df = getattr(self, attribute)
+            if isinstance(df, pd.DataFrame):
+                df = self._infer_numpy(df)
+                setattr(self, attribute, df)
+            elif isinstance(df, DataFramesStruct):
+                df.infer_numpy()
+
+    @staticmethod
+    def _infer_numpy(df):
+        """
+        Infer and convert the data types of a DataFrame to NumPy-compatible types.
+
+        Args:
+            df (pd.DataFrame): DataFrame to be processed.
+
+        Returns:
+            pd.DataFrame: DataFrame with updated data types.
+        """
+        df = df.convert_dtypes()
+
+        columns = df.select_dtypes(include=["integer"]).columns
+        df[columns] = df[columns].astype(int, errors="ignore")
+
+        columns = df.select_dtypes(include=["float"]).columns
+        df[columns] = df[columns].astype(float, errors="ignore")
+
+        columns = df.select_dtypes(include=["string"]).columns
+        df[columns] = df[columns].astype(str)
+
+        columns = df.select_dtypes(include=["boolean"]).columns
+        df[columns] = df[columns].astype(bool)
+        return df
 
     @property
     def attributes(self):
@@ -594,43 +654,6 @@ class CaseFrames(DataFramesStruct):
                         inplace=True,
                     )
 
-    def infer_numpy(self):
-        """
-        Infer and convert data types in all DataFrames to appropriate NumPy-compatible
-        types.
-        """
-        for attribute in self._attributes:
-            df = getattr(self, attribute)
-            if isinstance(df, pd.DataFrame):
-                df = self._infer_numpy(df)
-                setattr(self, attribute, df)
-
-    @staticmethod
-    def _infer_numpy(df):
-        """
-        Infer and convert the data types of a DataFrame to NumPy-compatible types.
-
-        Args:
-            df (pd.DataFrame): DataFrame to be processed.
-
-        Returns:
-            pd.DataFrame: DataFrame with updated data types.
-        """
-        df = df.convert_dtypes()
-
-        columns = df.select_dtypes(include=["integer"]).columns
-        df[columns] = df[columns].astype(int, errors="ignore")
-
-        columns = df.select_dtypes(include=["float"]).columns
-        df[columns] = df[columns].astype(float, errors="ignore")
-
-        columns = df.select_dtypes(include=["string"]).columns
-        df[columns] = df[columns].astype(str)
-
-        columns = df.select_dtypes(include=["boolean"]).columns
-        df[columns] = df[columns].astype(bool)
-        return df
-
     def reset_index(self):
         """
         Reset indices and remap bus-related indices to 0-based values.
@@ -841,28 +864,22 @@ class CaseFrames(DataFramesStruct):
         Returns:
             dict: Dictionary with attribute names as keys and their data as values.
         """
-        # TODO: support mpc = cf.to_dict() with reserves data
+        # default version and baseMVA to None
         data = {
-            "version": getattr(self, "version", None),
-            "baseMVA": getattr(self, "baseMVA", None),
+            "version": None,
+            "baseMVA": None,
         }
         for attribute in self._attributes:
-            if attribute == "version" or attribute == "baseMVA":
-                data[attribute] = getattr(self, attribute)
-            elif attribute in ["bus_name", "branch_name", "gen_name"]:
+            value = getattr(self, attribute)
+            if attribute in ["bus_name", "branch_name", "gen_name"]:
                 # NOTE: must be in 2D Cell or 2D np.array
-                data[attribute] = np.atleast_2d(getattr(self, attribute).values).T
-            elif attribute == "reserves":
-                reserves = {}
-                reserves["zones"] = getattr(self, attribute).zones.values.tolist()
-                reserves["req"] = getattr(self, attribute).req.values.tolist()
-                if hasattr(getattr(self, attribute), "cost"):
-                    reserves["cost"] = getattr(self, attribute).cost.values.tolist()
-                if hasattr(getattr(self, attribute), "qty"):
-                    reserves["qty"] = getattr(self, attribute).qty.values.tolist()
-                data[attribute] = reserves
+                data[attribute] = np.atleast_2d(value.values).T
+            elif isinstance(value, pd.DataFrame):
+                data[attribute] = value.values.tolist()
+            elif isinstance(value, DataFramesStruct):
+                data[attribute] = value.to_dict()
             else:
-                data[attribute] = getattr(self, attribute).values.tolist()
+                data[attribute] = value
         return data
 
     def to_mpc(self):
@@ -875,7 +892,6 @@ class CaseFrames(DataFramesStruct):
         Returns:
             dict: MATPOWER-compatible dictionary with data.
         """
-        # TODO: support mpc = cf.to_mpc() with reserves data
         return self.to_dict()
 
     def to_schema(self, path, prefix="", suffix=""):
