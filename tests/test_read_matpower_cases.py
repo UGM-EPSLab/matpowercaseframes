@@ -4,7 +4,7 @@ import pandas as pd
 from matpower import path_matpower, start_instance
 
 from matpowercaseframes import CaseFrames, ReservesFrames
-from matpowercaseframes.testing import assert_cf_equal
+from matpowercaseframes.testing import assert_frames_struct_equal
 
 """
     pytest -n auto -rA --cov-report term --cov=matpowercaseframes tests/
@@ -41,8 +41,8 @@ def test_case118():
 
     m.exit()
 
-    assert_cf_equal(cf, cf_lc)
-    assert_cf_equal(cf, cf_mpc)
+    assert_frames_struct_equal(cf, cf_lc)
+    assert_frames_struct_equal(cf, cf_mpc)
 
 
 def test_case_RTS_GMLC():
@@ -80,7 +80,7 @@ def test_case_RTS_GMLC():
     assert cf.gencost.columns.equals(cols)
     assert cf_lc.gencost.columns.equals(cols)
 
-    assert_cf_equal(cf, cf_lc)
+    assert_frames_struct_equal(cf, cf_lc)
 
     m.exit()
 
@@ -105,7 +105,7 @@ def test_read_without_ext():
     CASE_NAME = "case9"
     cf_no_ext = CaseFrames(CASE_NAME)
 
-    assert_cf_equal(cf, cf_no_ext)
+    assert_frames_struct_equal(cf, cf_no_ext)
 
 
 def test_read_allow_any_keys():
@@ -150,7 +150,7 @@ def test_read_case_reserve():
         assert attr in cf.reserves.attributes
 
     cf2 = CaseFrames(cf.to_mpc())
-    assert_cf_equal(cf, cf2)
+    assert_frames_struct_equal(cf, cf2)
 
     cf.reset_index()
     assert cf.reserves.zones.index.name == "zone"
