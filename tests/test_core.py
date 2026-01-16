@@ -6,8 +6,7 @@ import pytest
 
 from matpowercaseframes import CaseFrames
 from matpowercaseframes.idx import BUS_I, BUS_TYPE
-
-from .__init__ import assert_cf_equal
+from matpowercaseframes.testing import assert_cf_equal
 
 """
     pytest -n auto -rA --lf -c pyproject.toml --cov-report term-missing --cov=matpowercaseframes tests/

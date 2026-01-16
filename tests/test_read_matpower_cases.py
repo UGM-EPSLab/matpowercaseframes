@@ -4,8 +4,7 @@ import pandas as pd
 from matpower import path_matpower, start_instance
 
 from matpowercaseframes import CaseFrames, ReservesFrames
-
-from .__init__ import assert_cf_equal
+from matpowercaseframes.testing import assert_cf_equal
 
 """
     pytest -n auto -rA --cov-report term --cov=matpowercaseframes tests/
@@ -139,21 +138,29 @@ def test_read_case_reserve():
     assert cf.reserves.req.index.name == "zone"
     assert "PREQ" in cf.reserves.req.columns
 
-    if "cost" in cf.reserves.attributes:
-        assert isinstance(cf.reserves.cost, pd.DataFrame)
-        assert "C1" in cf.reserves.cost.columns
+    assert isinstance(cf.reserves.cost, pd.DataFrame)
+    assert "C1" in cf.reserves.cost.columns
+    assert cf.reserves.cost.index.name == "gen"
 
-    if "qty" in cf.reserves.attributes:
-        assert isinstance(cf.reserves.qty, pd.DataFrame)
-        assert "PQTY" in cf.reserves.qty.columns
+    assert isinstance(cf.reserves.qty, pd.DataFrame)
+    assert "PQTY" in cf.reserves.qty.columns
+    assert cf.reserves.qty.index.name == "gen"
 
-    expected_attrs = ["zones", "req"]
-    if hasattr(cf.reserves, "cost"):
-        expected_attrs.append("cost")
-    if hasattr(cf.reserves, "qty"):
-        expected_attrs.append("qty")
-
-    for attr in expected_attrs:
+    for attr in ["zones", "req", "cost", "qty"]:
         assert attr in cf.reserves.attributes
+
+    cf2 = CaseFrames(cf.to_mpc())
+    assert_cf_equal(cf, cf2)
+
+    cf.reset_index()
+    assert cf.reserves.zones.index.name == "zone"
+    assert cf.reserves.zones.columns.name == "gen"
+    assert cf.reserves.zones.shape == (cf.reserves.req.shape[0], cf.gen.shape[0])
+    assert "C1" in cf.reserves.cost.columns
+    assert cf.reserves.cost.index.name == "gen"
+    for idx in cf.reserves.cost.index:
+        assert idx in cf.gen.index
+    assert "PQTY" in cf.reserves.qty.columns
+    assert cf.reserves.qty.index.equals(cf.reserves.cost.index)
 
     m.exit()

@@ -11,6 +11,7 @@ import pandas as pd
 
 from .constants import ATTRIBUTES, COLUMNS
 from .reader import find_attributes, find_name, parse_file
+from .utils import get_attr, has_attr
 
 try:
     import matpower
@@ -647,10 +648,16 @@ class CaseFrames:
         Returns:
             None: The CaseFrames object is modified in place.
         """
+        # store original gen index mapping before resetting, used in reserves
+        gen_map = {v: k for k, v in enumerate(self.gen.index)}
+
         for attribute in self._attributes:
             df = getattr(self, attribute)
             if isinstance(df, pd.DataFrame):
+                idx_name = df.index.name
                 df.reset_index(drop=True, inplace=True)
+                df.index.name = idx_name
+
         bus_map = {v: k for k, v in enumerate(self.bus["BUS_I"])}
         self.bus["BUS_I"] = self.bus.index
         self.branch[["F_BUS", "T_BUS"]] = self.branch[["F_BUS", "T_BUS"]].replace(
@@ -658,9 +665,22 @@ class CaseFrames:
         )
         self.gen["GEN_BUS"] = self.gen["GEN_BUS"].replace(bus_map)
 
-        # TODO:
-        #   Since mpc.reserves.zones columns use cf.gen.index, don't forget to update
-        # the columns of mpc.reserves.zones if exists.
+        if hasattr(self, "reserves"):
+            reserves = self.reserves
+            for attribute in ["zones", "req"]:
+                df = getattr(reserves, attribute)
+                if isinstance(df, pd.DataFrame):
+                    idx_name = df.index.name
+                    df.reset_index(drop=True, inplace=True)
+                    df.index.name = idx_name
+            self.reserves.zones.columns = self.gen.index
+
+            if hasattr(self.reserves, "cost"):
+                self.reserves.cost = self.reserves.cost.rename(index=gen_map)
+                self.reserves.cost.index.name = "gen"
+            if hasattr(self.reserves, "qty"):
+                self.reserves.qty = self.reserves.qty.rename(index=gen_map)
+                self.reserves.qty.index.name = "gen"
 
     def add_schema_case(self, F=None):
         # add case to follow casefromat/schema
@@ -831,6 +851,15 @@ class CaseFrames:
             elif attribute in ["bus_name", "branch_name", "gen_name"]:
                 # NOTE: must be in 2D Cell or 2D np.array
                 data[attribute] = np.atleast_2d(getattr(self, attribute).values).T
+            elif attribute == "reserves":
+                reserves = {}
+                reserves["zones"] = getattr(self, attribute).zones.values.tolist()
+                reserves["req"] = getattr(self, attribute).req.values.tolist()
+                if hasattr(getattr(self, attribute), "cost"):
+                    reserves["cost"] = getattr(self, attribute).cost.values.tolist()
+                if hasattr(getattr(self, attribute), "qty"):
+                    reserves["qty"] = getattr(self, attribute).qty.values.tolist()
+                data[attribute] = reserves
             else:
                 data[attribute] = getattr(self, attribute).values.tolist()
         return data
@@ -869,35 +898,42 @@ def reserves_data_to_dataframes(reserves):
     Convert all mpc.reserves struct data to DataFrames.
 
     Args:
-        reserves: Octave struct or dictionary of mpc.reserves object from MATPOWER
+        reserves: dict or oct2py.io.Struct of mpc.reserves object from MATPOWER
 
     Returns:
-        Dictionary containing:
+        dict or oct2py.io.Struct containing:
             - 'zones': Reserve zones DataFrame
             - 'req': Reserve requirements DataFrame
             - 'cost': Reserve costs DataFrame (if exists)
             - 'qty': Reserve quantities DataFrame (if exists)
     """
     dfs = {}
-    n_zones, n_gens = reserves.zones.shape
+
+    zones_data = get_attr(reserves, "zones")
+    n_zones, n_gens = np.array(zones_data).shape
     dfs["zones"] = pd.DataFrame(
-        reserves.zones,
+        zones_data,
         index=pd.RangeIndex(start=1, stop=n_zones + 1, name="zone"),
         columns=pd.RangeIndex(start=1, stop=n_gens + 1, name="gen"),
     )
+
     zone_sum = dfs["zones"].sum(axis=0)
     idx_gen_with_reserves = zone_sum[zone_sum > 0].index
+
     dfs["req"] = pd.DataFrame(
-        reserves.req,
+        get_attr(reserves, "req"),
         index=pd.RangeIndex(start=1, stop=n_zones + 1, name="zone"),
         columns=["PREQ"],
     )
-    if hasattr(reserves, "cost"):
+
+    if has_attr(reserves, "cost"):
         dfs["cost"] = pd.DataFrame(
-            reserves.cost, index=idx_gen_with_reserves, columns=["C1"]
+            get_attr(reserves, "cost"), index=idx_gen_with_reserves, columns=["C1"]
         )
-    if hasattr(reserves, "qty"):
+
+    if has_attr(reserves, "qty"):
         dfs["qty"] = pd.DataFrame(
-            reserves.qty, index=idx_gen_with_reserves, columns=["PQTY"]
+            get_attr(reserves, "qty"), index=idx_gen_with_reserves, columns=["PQTY"]
         )
+
     return dfs
