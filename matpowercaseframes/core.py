@@ -350,6 +350,7 @@ class CaseFrames(DataFramesStruct):
         Args:
             filepath (str): Path to the MATPOWER file.
         """
+        # TODO: support reserves
         with open(filepath) as f:
             string = f.read()
 
@@ -409,6 +410,7 @@ class CaseFrames(DataFramesStruct):
         Args:
             array (np.ndarray): Structured NumPy array with named fields.
         """
+        # TODO: support reserves
         self.name = ""
         for attribute in array.dtype.names:
             if attribute not in ATTRIBUTES and not allow_any_keys:
@@ -434,6 +436,7 @@ class CaseFrames(DataFramesStruct):
             prefix (str): Sheet prefix for each attribute in the Excel file.
             suffix (str): Sheet suffix for each attribute in the Excel file.
         """
+        # TODO: support reserves
         sheets = pd.read_excel(filepath, index_col=0, sheet_name=None)
 
         # info sheet to extract general metadata
@@ -481,6 +484,7 @@ class CaseFrames(DataFramesStruct):
             suffix (str): File suffix for each attribute CSV file.
             allow_any_keys (bool): Whether to allow any keys beyond ATTRIBUTES.
         """
+        # TODO: support reserves
         # create a dictionary mapping attribute names to file paths
         csv_data = {}
         for csv_file in os.listdir(dirpath):
