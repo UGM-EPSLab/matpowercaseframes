@@ -3,7 +3,7 @@ import warnings
 import pandas as pd
 from matpower import path_matpower, start_instance
 
-from matpowercaseframes import CaseFrames
+from matpowercaseframes import CaseFrames, ReservesFrames
 
 from .__init__ import assert_cf_equal
 
@@ -116,3 +116,44 @@ def test_read_allow_any_keys():
 
     cf = CaseFrames(CASE_NAME, allow_any_keys=True)
     assert "load" in cf.attributes
+
+
+def test_read_case_reserve():
+    m = start_instance()
+    CASE_NAME = "data/ex_case3a.m"
+    cf = CaseFrames(CASE_NAME, load_case_engine=m)
+
+    assert "reserves" in cf.attributes
+    assert hasattr(cf, "reserves")
+
+    assert isinstance(cf.reserves, ReservesFrames)
+
+    assert "zones" in cf.reserves.attributes
+    assert isinstance(cf.reserves.zones, pd.DataFrame)
+    assert cf.reserves.zones.index.name == "zone"
+    assert cf.reserves.zones.columns.name == "gen"
+    assert cf.reserves.zones.shape == (cf.reserves.req.shape[0], cf.gen.shape[0])
+
+    assert "req" in cf.reserves.attributes
+    assert isinstance(cf.reserves.req, pd.DataFrame)
+    assert cf.reserves.req.index.name == "zone"
+    assert "PREQ" in cf.reserves.req.columns
+
+    if "cost" in cf.reserves.attributes:
+        assert isinstance(cf.reserves.cost, pd.DataFrame)
+        assert "C1" in cf.reserves.cost.columns
+
+    if "qty" in cf.reserves.attributes:
+        assert isinstance(cf.reserves.qty, pd.DataFrame)
+        assert "PQTY" in cf.reserves.qty.columns
+
+    expected_attrs = ["zones", "req"]
+    if hasattr(cf.reserves, "cost"):
+        expected_attrs.append("cost")
+    if hasattr(cf.reserves, "qty"):
+        expected_attrs.append("qty")
+
+    for attr in expected_attrs:
+        assert attr in cf.reserves.attributes
+
+    m.exit()

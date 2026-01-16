@@ -820,6 +820,7 @@ class CaseFrames:
         Returns:
             dict: Dictionary with attribute names as keys and their data as values.
         """
+        # TODO: support mpc = cf.to_dict() with reserves data
         data = {
             "version": getattr(self, "version", None),
             "baseMVA": getattr(self, "baseMVA", None),
@@ -844,6 +845,7 @@ class CaseFrames:
         Returns:
             dict: MATPOWER-compatible dictionary with data.
         """
+        # TODO: support mpc = cf.to_mpc() with reserves data
         return self.to_dict()
 
     def to_schema(self, path, prefix="", suffix=""):
