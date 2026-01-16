@@ -21,7 +21,42 @@ except ImportError:
     MATPOWER_EXIST = False
 
 
-class ReservesFrames:
+class DataFramesStruct:
+    """Base class for struct-like containers with DataFrames."""
+
+    def __init__(self):
+        """Initialize the base struct with an empty attributes list."""
+        self._attributes = []
+
+    def setattr(self, name, value):
+        """
+        Set attribute and track it in _attributes list.
+
+        Args:
+            name (str): Attribute name.
+            value: Attribute value.
+        """
+        if name not in self._attributes:
+            self._attributes.append(name)
+        self.__setattr__(name, value)
+
+    @property
+    def attributes(self):
+        """
+        List of attributes in this struct object.
+
+        Returns:
+            list: List of attribute names.
+        """
+        return self._attributes
+
+    def __repr__(self):
+        """String representation of the struct."""
+        attrs = ", ".join(self._attributes)
+        return f"{self.__class__.__name__}(attributes=[{attrs}])"
+
+
+class ReservesFrames(DataFramesStruct):
     """A struct-like container for reserves data, similar to CaseFrames."""
 
     def __init__(self, data=None):
@@ -32,8 +67,7 @@ class ReservesFrames:
             data (dict, optional): Dictionary containing reserves DataFrames.
                 Expected keys: 'zones', 'req', 'cost', 'qty'
         """
-        self._attributes = []
-
+        super().__init__()
         if data is not None:
             if isinstance(data, dict):
                 for key, value in data.items():
@@ -41,19 +75,8 @@ class ReservesFrames:
             else:
                 raise TypeError(f"ReservesFrames data must be a dict, got {type(data)}")
 
-    def setattr(self, name, value):
-        """Set attribute and track it in _attributes list."""
-        if name not in self._attributes:
-            self._attributes.append(name)
-        self.__setattr__(name, value)
 
-    @property
-    def attributes(self):
-        """List of attributes in this ReservesFrames object."""
-        return self._attributes
-
-
-class CaseFrames:
+class CaseFrames(DataFramesStruct):
     def __init__(
         self,
         data=None,
@@ -97,8 +120,9 @@ class CaseFrames:
             TypeError: If the input data format is unsupported.
             FileNotFoundError: If the specified file cannot be found.
         """
-        # TODO: support read directory containing csv
         # TODO: support Path object
+
+        super().__init__()
         if columns_templates is None:
             self.columns_templates = copy.deepcopy(COLUMNS)
         else:
@@ -187,7 +211,6 @@ class CaseFrames:
             )
         elif data is None:
             self.name = ""
-            self._attributes = []
         else:
             message = (
                 f"Not supported source type {type(data)}. Data must be a str path to"
@@ -206,11 +229,6 @@ class CaseFrames:
         """
         df = self._get_dataframe(name, value, columns_template=columns_template)
         self.setattr(name, df)
-
-    def setattr(self, name, value):
-        if name not in self._attributes:
-            self._attributes.append(name)
-        self.__setattr__(name, value)
 
     def update_columns_templates(self, columns_templates):
         self.columns_templates.update(columns_templates)
@@ -276,7 +294,6 @@ class CaseFrames:
             string = f.read()
 
         self.name = find_name(string)
-        self._attributes = []
 
         for attribute in find_attributes(string):
             if attribute not in ATTRIBUTES and not allow_any_keys:
@@ -304,7 +321,6 @@ class CaseFrames:
                 Data in structured dictionary or Octave's oct2py struct format.
         """
         self.name = ""
-        self._attributes = []
 
         for attribute, list_ in struct.items():
             if attribute not in ATTRIBUTES and not allow_any_keys:
@@ -334,7 +350,6 @@ class CaseFrames:
             array (np.ndarray): Structured NumPy array with named fields.
         """
         self.name = ""
-        self._attributes = []
         for attribute in array.dtype.names:
             if attribute not in ATTRIBUTES and not allow_any_keys:
                 continue
@@ -360,8 +375,6 @@ class CaseFrames:
             suffix (str): Sheet suffix for each attribute in the Excel file.
         """
         sheets = pd.read_excel(filepath, index_col=0, sheet_name=None)
-
-        self._attributes = []
 
         # info sheet to extract general metadata
         info_sheet_name = f"{prefix}info{suffix}"
@@ -421,8 +434,6 @@ class CaseFrames:
                     attribute = attribute[: -len(suffix)]
 
                 csv_data[attribute] = os.path.join(dirpath, csv_file)
-
-        self._attributes = []
 
         # info CSV to extract general metadata
         info_name = "info"
@@ -521,16 +532,6 @@ class CaseFrames:
                 columns = columns + [f"C{i}" for i in range(NCOST - 1, -1, -1)]
 
         return pd.DataFrame(data, columns=columns)
-
-    @property
-    def attributes(self):
-        """
-        List of attributes that have been parsed from the input data.
-
-        Returns:
-            list: List of attribute names.
-        """
-        return self._attributes
 
     def _update_index(self, allow_any_keys=False):
         """
