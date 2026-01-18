@@ -171,46 +171,48 @@ def test_read_xgd_table():
     """Test reading and using xGenDataTableFrames."""
     m = start_instance()
 
-    # Load case and xGenDataTable from file
     CASE_NAME = "data/ex_case3a.m"
     cf = CaseFrames(CASE_NAME, load_case_engine=m)
 
-    xgd_table_file = "ex_xgd_uc.m"
-    fields = {"colnames", "data"}
-    args = cf.to_mpc()
-
-    # Load xGenDataTable using MATPOWER
     # NOTE: loadgenericdata not yet support absolute path
-    xgdt = m.loadgenericdata(xgd_table_file, "struct", fields, "xgd_table", args)
+    xgd_table_file = "ex_xgd_uc.m"
+    xgdt = m.loadgenericdata(
+        xgd_table_file, "struct", {"colnames", "data"}, "xgd_table", cf.to_mpc()
+    )
 
-    # Create xGenDataTableFrames
     xgdtf = xGenDataTableFrames(
         data=xgdt.data, colnames=xgdt.colnames, index=cf.gen.index
     )
 
-    # Test basic attributes
     assert hasattr(xgdtf, "table")
     assert isinstance(xgdtf.table, pd.DataFrame)
     assert xgdtf.table.index.equals(cf.gen.index)
 
-    # Test properties
     assert xgdtf.colnames.shape[0] == 1  # Should be 2D with one row
     assert xgdtf.data.shape == xgdtf.table.shape
     assert len(xgdtf) == len(cf.gen)
 
-    # Test DataFrame-like behavior
     first_col = xgdtf.table.columns[0]
     assert xgdtf[first_col].equals(xgdtf.table[first_col])
 
-    # Test iteration
     cols_from_iter = list(xgdtf)
     assert cols_from_iter == list(xgdtf.table.columns)
 
-    # Test to_dict and to_mpc
-    xgdtf_dict = xgdtf.to_dict()
-    assert "colnames" in xgdtf_dict
-    assert "data" in xgdtf_dict
-    np.testing.assert_array_equal(xgdtf_dict["colnames"], xgdtf.colnames)
-    np.testing.assert_array_equal(xgdtf_dict["data"], xgdtf.data)
+    xdgt = xgdtf.to_xgdt()
+    assert "colnames" in xdgt
+    assert "data" in xdgt
+    np.testing.assert_array_equal(xdgt["colnames"], xgdtf.colnames)
+    np.testing.assert_array_equal(xdgt["data"], xgdtf.data)
+
+    xgd = m.loadxgendata(xgdtf.to_xgdt(), cf.to_mpc())
+    xgdf = xGenDataTableFrames(data=xgd)
+    xgdf_df = xgdf.to_df()
+    assert isinstance(xgdf_df, pd.DataFrame)
+
+    xdg = xgdf.to_xgd()
+    for k, v in xdg.items():
+        assert k in xgdf.colnames.flatten().tolist()
+        assert k in xgdf_df.columns
+        np.testing.assert_array_equal(v, xgdf[k].to_numpy().reshape(-1, 1))
 
     m.exit()

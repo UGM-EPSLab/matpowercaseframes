@@ -975,7 +975,7 @@ class xGenDataTableFrames(DataFramesStruct):
             data (np.ndarray | list, optional): Data for the xGenDataTableFrames.
                 Defaults to None.
             colnames (list, optional): Column names for the DataFrame. Defaults to None.
-            gen_index (pd.Index, optional): Index for the generators. Defaults to None.
+            index (pd.Index, optional): Index for the generators. Defaults to None.
         """
         super().__init__()
         if colnames is None:
@@ -992,11 +992,16 @@ class xGenDataTableFrames(DataFramesStruct):
             #     ]
 
         if data is not None:
-            if isinstance(data, np.ndarray) or isinstance(data, list):
-                # TODO: if index is None and cf is given, use cf.gen.index
+            if isinstance(data, dict):
+                self.table = pd.DataFrame(
+                    {k: np.asarray(v).flatten() for k, v in data.items()}, index=index
+                )
+            elif isinstance(data, np.ndarray) or isinstance(data, list):
                 self.table = pd.DataFrame(data, columns=colnames, index=index)
             elif isinstance(data, str):
-                # TODO: support read from file
+                # TODO:
+                #   1. Support read from file.
+                #   2. Differentiate between xdg_table and xdg
                 # xgdt = m.loadgenericdata(
                 #     data, 'struct', {'colnames', 'data'}, 'xgd_table', cf.to_mpc()
                 # )
@@ -1006,6 +1011,12 @@ class xGenDataTableFrames(DataFramesStruct):
             else:
                 raise TypeError(
                     f"xGenDataTableFrames data type is not supported, got {type(data)}."
+                )
+
+            if index is None:
+                # TODO: if index is None and cf is given, use cf.gen.index
+                self.table.index = pd.RangeIndex(
+                    start=1, stop=self.table.shape[0] + 1, name="gen"
                 )
         else:
             self.table = pd.DataFrame(columns=colnames, index=index)
@@ -1020,20 +1031,50 @@ class xGenDataTableFrames(DataFramesStruct):
     def data(self):
         return self.table.to_numpy()
 
+    @property
+    def df(self):
+        return self.table
+
+    def to_df(self):
+        return self.table
+
     def to_dict(self):
+        """
+        Convert to combined dict with both xgd and xgd_table formats.
+
+        Returns:
+            dict: Combined dictionary with:
+                - Column names as keys with 2D array values (xgd format)
+                - 'colnames' and 'data' keys (xgd_table format)
+        """
+        xgd_dict = self.to_xgd()
+        xgdt_dict = self.to_xdgt()
+        return {**xgd_dict, **xgdt_dict}
+
+    def to_xgdt(self):
+        """
+        Convert to xgd_table format (for loadgenericdata).
+
+        Returns:
+            dict: Dictionary with 'colnames' (2D array) and 'data' (2D array)
+        """
         return {
             "colnames": self.colnames,
             "data": self.data,
         }
 
-    def to_mpc(self):
+    def to_xgd(self):
         """
-        Convert the xGenDataTableFrames data into a format compatible with MATPOWER.
+        Convert to xgd struct format (for loadxgendata/MOST functions).
 
         Returns:
-            np.ndarray: Data in a format compatible with MATPOWER.
+            dict: Dictionary where keys are column names and values are 2D arrays (n, 1)
         """
-        return self.to_dict()
+        return {
+            col: self.table[col].values.reshape(-1, 1) for col in self.table.columns
+        }
+
+    # TODO: support other DataFrame methods
 
     def _repr_html_(self):
         """HTML representation for Jupyter notebooks."""

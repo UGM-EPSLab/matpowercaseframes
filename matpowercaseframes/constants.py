@@ -138,11 +138,9 @@ COLUMNS = {
         "NegativeLoadFollowReserveQuantity",
     ],
     "xgd": {  # xGenData
-        # TODO: xgd column names
-        "CommitKey": [],
         "CommitSched": [],
-        "MinUp": [],
-        "MinDown": [],
+        "InitialPg": [],
+        "RampWearCostCoeff": [],
         "PositiveActiveReservePrice": [],
         "PositiveActiveReserveQuantity": [],
         "NegativeActiveReservePrice": [],
@@ -153,6 +151,11 @@ COLUMNS = {
         "PositiveLoadFollowReserveQuantity": [],
         "NegativeLoadFollowReservePrice": [],
         "NegativeLoadFollowReserveQuantity": [],
+        "TerminalPg": [],
+        "CommitKey": [],
+        "InitialState": [],
+        "MinUp": [],
+        "MinDow": [],
     },
     "if": {
         # negative 'BRANCHIDX' defines opposite direction
