@@ -16,6 +16,8 @@ ATTRIBUTES = (
     "dclinecost",
     "case",
     "reserves",
+    "xgd_table",
+    "xgd",
 )
 
 COLUMNS = {
@@ -114,9 +116,43 @@ COLUMNS = {
         "MU_QMAXT",
     ],
     "reserves": {
+        "zones": [],
         "req": ["PREQ"],
         "cost": ["C1"],
         "qty": ["PQTY"],
+    },
+    "xgd_table": [
+        "CommitKey",
+        "CommitSched",
+        "MinUp",
+        "MinDown",
+        "PositiveActiveReservePrice",
+        "PositiveActiveReserveQuantity",
+        "NegativeActiveReservePrice",
+        "NegativeActiveReserveQuantity",
+        "PositiveActiveDeltaPrice",
+        "NegativeActiveDeltaPrice",
+        "PositiveLoadFollowReservePrice",
+        "PositiveLoadFollowReserveQuantity",
+        "NegativeLoadFollowReservePrice",
+        "NegativeLoadFollowReserveQuantity",
+    ],
+    "xgd": {  # xGenData
+        # TODO: xgd column names
+        "CommitKey": [],
+        "CommitSched": [],
+        "MinUp": [],
+        "MinDown": [],
+        "PositiveActiveReservePrice": [],
+        "PositiveActiveReserveQuantity": [],
+        "NegativeActiveReservePrice": [],
+        "NegativeActiveReserveQuantity": [],
+        "PositiveActiveDeltaPrice": [],
+        "NegativeActiveDeltaPrice": [],
+        "PositiveLoadFollowReservePrice": [],
+        "PositiveLoadFollowReserveQuantity": [],
+        "NegativeLoadFollowReservePrice": [],
+        "NegativeLoadFollowReserveQuantity": [],
     },
     "if": {
         # negative 'BRANCHIDX' defines opposite direction

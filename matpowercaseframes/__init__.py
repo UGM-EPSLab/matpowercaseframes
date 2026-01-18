@@ -1,2 +1,15 @@
-from .core import CaseFrames, ReservesFrames  # noqa: F401
-from .version import __version__  # noqa: F401
+from .core import (
+    CaseFrames,
+    DataFramesStruct,
+    ReservesFrames,
+    xGenDataTableFrames,
+)
+from .version import __version__
+
+__all__ = [
+    "CaseFrames",
+    "DataFramesStruct",
+    "ReservesFrames",
+    "xGenDataTableFrames",
+    "__version__",
+]

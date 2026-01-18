@@ -119,7 +119,7 @@ class DataFramesStruct:
 class ReservesFrames(DataFramesStruct):
     """A struct-like container for reserves data, similar to CaseFrames."""
 
-    def __init__(self, data=None):
+    def __init__(self, data=None, allow_any_keys=False):
         """
         Initialize ReservesFrames with optional data.
 
@@ -130,8 +130,13 @@ class ReservesFrames(DataFramesStruct):
         super().__init__()
         if data is not None:
             if isinstance(data, dict):
-                for key, value in data.items():
-                    self.setattr(key, value)
+                if not allow_any_keys:
+                    for key, value in data.items():
+                        if key in COLUMNS["reserves"]:
+                            self.setattr(key, value)
+                else:
+                    for key, value in data.items():
+                        self.setattr(key, value)
             else:
                 raise TypeError(f"ReservesFrames data must be a dict, got {type(data)}")
 
@@ -181,7 +186,6 @@ class CaseFrames(DataFramesStruct):
             FileNotFoundError: If the specified file cannot be found.
         """
         # TODO: support Path object
-
         super().__init__()
         if columns_templates is None:
             self.columns_templates = copy.deepcopy(COLUMNS)
@@ -958,3 +962,103 @@ def reserves_data_to_dataframes(reserves):
         )
 
     return dfs
+
+
+class xGenDataTableFrames(DataFramesStruct):
+    """A struct-like container for reserves data, similar to CaseFrames."""
+
+    def __init__(self, data=None, colnames=None, index=None):
+        """
+        Initialize xGenDataTableFrames with optional data.
+
+        Args:
+            data (np.ndarray | list, optional): Data for the xGenDataTableFrames.
+                Defaults to None.
+            colnames (list, optional): Column names for the DataFrame. Defaults to None.
+            gen_index (pd.Index, optional): Index for the generators. Defaults to None.
+        """
+        super().__init__()
+        if colnames is None:
+            n_col = np.atleast_2d(data).shape[1]
+            colnames = COLUMNS["xgd_table"][:n_col]
+        else:
+            colnames = colnames.flatten()
+            # if not allow_any_keys:
+            #     # TODO: remove columns in data that are not in COLUMNS
+            #     colnames = [
+            #         col
+            #         for col in colnames
+            #         if col in COLUMNS["xgd_table"]
+            #     ]
+
+        if data is not None:
+            if isinstance(data, np.ndarray) or isinstance(data, list):
+                # TODO: if index is None and cf is given, use cf.gen.index
+                self.table = pd.DataFrame(data, columns=colnames, index=index)
+            elif isinstance(data, str):
+                # TODO: support read from file
+                # xgdt = m.loadgenericdata(
+                #     data, 'struct', {'colnames', 'data'}, 'xgd_table', cf.to_mpc()
+                # )
+                raise NotImplementedError(
+                    "Reading xGenDataTableFrames from file is not yet implemented."
+                )
+            else:
+                raise TypeError(
+                    f"xGenDataTableFrames data type is not supported, got {type(data)}."
+                )
+        else:
+            self.table = pd.DataFrame(columns=colnames, index=index)
+
+        self._attributes.extend(["table", "colnames", "data"])
+
+    @property
+    def colnames(self):
+        return np.atleast_2d(self.table.columns)
+
+    @property
+    def data(self):
+        return self.table.to_numpy()
+
+    def to_dict(self):
+        return {
+            "colnames": self.colnames,
+            "data": self.data,
+        }
+
+    def to_mpc(self):
+        """
+        Convert the xGenDataTableFrames data into a format compatible with MATPOWER.
+
+        Returns:
+            np.ndarray: Data in a format compatible with MATPOWER.
+        """
+        return self.to_dict()
+
+    def _repr_html_(self):
+        """HTML representation for Jupyter notebooks."""
+        return self.table._repr_html_()
+
+    def __repr__(self):
+        """String representation."""
+        return repr(self.table)
+
+    def __str__(self):
+        """String representation for print()."""
+        return str(self.table)
+
+    def __getitem__(self, key):
+        """Allow indexing like a DataFrame: obj['col'] or obj[0:5]."""
+        return self.table[key]
+
+    def __setitem__(self, key, value):
+        """Allow setting values like a DataFrame: obj['col'] = values."""
+        self.table[key] = value
+
+    def __len__(self):
+        """Return number of rows."""
+        return len(self.table)
+
+    def __iter__(self):
+        """Iterate over column names like a DataFrame."""
+        return iter(self.table)

@@ -1,9 +1,10 @@
 import warnings
 
+import numpy as np
 import pandas as pd
 from matpower import path_matpower, start_instance
 
-from matpowercaseframes import CaseFrames, ReservesFrames
+from matpowercaseframes import CaseFrames, ReservesFrames, xGenDataTableFrames
 from matpowercaseframes.testing import assert_frames_struct_equal
 
 """
@@ -162,5 +163,54 @@ def test_read_case_reserve():
         assert idx in cf.gen.index
     assert "PQTY" in cf.reserves.qty.columns
     assert cf.reserves.qty.index.equals(cf.reserves.cost.index)
+
+    m.exit()
+
+
+def test_read_xgd_table():
+    """Test reading and using xGenDataTableFrames."""
+    m = start_instance()
+
+    # Load case and xGenDataTable from file
+    CASE_NAME = "data/ex_case3a.m"
+    cf = CaseFrames(CASE_NAME, load_case_engine=m)
+
+    xgd_table_file = "ex_xgd_uc.m"
+    fields = {"colnames", "data"}
+    args = cf.to_mpc()
+
+    # Load xGenDataTable using MATPOWER
+    # NOTE: loadgenericdata not yet support absolute path
+    xgdt = m.loadgenericdata(xgd_table_file, "struct", fields, "xgd_table", args)
+
+    # Create xGenDataTableFrames
+    xgdtf = xGenDataTableFrames(
+        data=xgdt.data, colnames=xgdt.colnames, index=cf.gen.index
+    )
+
+    # Test basic attributes
+    assert hasattr(xgdtf, "table")
+    assert isinstance(xgdtf.table, pd.DataFrame)
+    assert xgdtf.table.index.equals(cf.gen.index)
+
+    # Test properties
+    assert xgdtf.colnames.shape[0] == 1  # Should be 2D with one row
+    assert xgdtf.data.shape == xgdtf.table.shape
+    assert len(xgdtf) == len(cf.gen)
+
+    # Test DataFrame-like behavior
+    first_col = xgdtf.table.columns[0]
+    assert xgdtf[first_col].equals(xgdtf.table[first_col])
+
+    # Test iteration
+    cols_from_iter = list(xgdtf)
+    assert cols_from_iter == list(xgdtf.table.columns)
+
+    # Test to_dict and to_mpc
+    xgdtf_dict = xgdtf.to_dict()
+    assert "colnames" in xgdtf_dict
+    assert "data" in xgdtf_dict
+    np.testing.assert_array_equal(xgdtf_dict["colnames"], xgdtf.colnames)
+    np.testing.assert_array_equal(xgdtf_dict["data"], xgdtf.data)
 
     m.exit()
