@@ -116,6 +116,106 @@ class DataFramesStruct:
         return f"{self.__class__.__name__}(attributes=[{attrs}])"
 
 
+class DataFrameStruct(DataFramesStruct):
+    def __init__(self, data, index, colnames):
+        super().__init__()
+
+        if data is not None:
+            if isinstance(data, dict):
+                self.setattr(
+                    "table",
+                    pd.DataFrame(
+                        {k: np.asarray(v).flatten() for k, v in data.items()},
+                        index=index,
+                    ),
+                )
+            elif isinstance(data, (np.ndarray, list)):
+                self.setattr("table", pd.DataFrame(data, columns=colnames, index=index))
+            elif isinstance(data, str):
+                # TODO:
+                #   1. Support read from file.
+                #   2. Differentiate between xdg_table and xdg
+                # xgdt = m.loadgenericdata(
+                #     data, 'struct', {'colnames', 'data'}, 'xgd_table', cf.to_mpc()
+                # )
+                raise NotImplementedError(
+                    "Reading DataTableFrames from file not yet implemented."
+                )
+            else:
+                raise TypeError(f"Unsupported data type: {type(data)}")
+
+            if index is None:
+                self.table.index = pd.RangeIndex(
+                    start=1, stop=len(self.table) + 1, name="gen"
+                )
+        else:
+            self.setattr("table", pd.DataFrame(columns=colnames, index=index))
+
+    @property
+    def colnames(self):
+        """Get column names as 2D array (MATPOWER xgdt format)."""
+        return np.atleast_2d(self.table.columns)
+
+    @property
+    def data(self):
+        """Get data as NumPy array."""
+        return self.table.to_numpy()
+
+    @property
+    def df(self):
+        return self.table
+
+    def to_df(self):
+        return self.table
+
+    def to_dict(self):
+        return {
+            col: self.table[col].values.reshape(-1, 1) for col in self.table.columns
+        }
+
+    def infer_numpy(self):
+        df = self._infer_numpy(self.table)
+        self.table = df
+
+    def __getattr__(self, name):
+        """Delegate attribute access to the underlying DataFrame."""
+        # if attribute not found in self,
+        if name in self.table.columns:
+            # try to get it from self.table[name]
+            return np.atleast_2d(self.table[name].values)
+        else:
+            # try to get it from self.table
+            return getattr(self.table, name)
+
+    def _repr_html_(self):
+        """HTML representation for Jupyter notebooks."""
+        return self.table._repr_html_()
+
+    def __repr__(self):
+        """String representation."""
+        return repr(self.table)
+
+    def __str__(self):
+        """String representation for print()."""
+        return str(self.table)
+
+    def __getitem__(self, key):
+        """Allow indexing like a DataFrame: obj['col'] or obj[0:5]."""
+        return self.table[key]
+
+    def __setitem__(self, key, value):
+        """Allow setting values like a DataFrame: obj['col'] = values."""
+        self.table[key] = value
+
+    def __len__(self):
+        """Return number of rows."""
+        return len(self.table)
+
+    def __iter__(self):
+        """Iterate over column names like a DataFrame."""
+        return iter(self.table)
+
+
 class ReservesFrames(DataFramesStruct):
     """A struct-like container for reserves data, similar to CaseFrames."""
 
@@ -964,7 +1064,7 @@ def reserves_data_to_dataframes(reserves):
     return dfs
 
 
-class xGenDataTableFrames(DataFramesStruct):
+class xGenDataTableFrames(DataFrameStruct):
     """
     A struct-like and DataFrame-like container for xGenData with MATPOWER
     compatibility. Support standard DataFrame operations.
@@ -972,15 +1072,13 @@ class xGenDataTableFrames(DataFramesStruct):
 
     def __init__(self, data=None, colnames=None, index=None):
         """
-        Initialize xGenDataTableFrames with optional data.
+        Initialize DataTableFrames with optional data.
 
         Args:
-            data (np.ndarray | list | dict, optional): Data for xGenDataTableFrames.
+            data (np.ndarray | list | dict, optional): Data for DataTableFrames.
             colnames (list, optional): Column names. Defaults to None.
             index (pd.Index, optional): Row index. Defaults to None.
         """
-        super().__init__()
-
         if data is not None and colnames is None:
             if isinstance(data, dict):
                 colnames = list(data.keys())
@@ -999,53 +1097,7 @@ class xGenDataTableFrames(DataFramesStruct):
             #         if col in COLUMNS["xgd_table"]
             #     ]
 
-        if data is not None:
-            if isinstance(data, dict):
-                self.setattr(
-                    "table",
-                    pd.DataFrame(
-                        {k: np.asarray(v).flatten() for k, v in data.items()},
-                        index=index,
-                    ),
-                )
-            elif isinstance(data, (np.ndarray, list)):
-                self.setattr("table", pd.DataFrame(data, columns=colnames, index=index))
-            elif isinstance(data, str):
-                # TODO:
-                #   1. Support read from file.
-                #   2. Differentiate between xdg_table and xdg
-                # xgdt = m.loadgenericdata(
-                #     data, 'struct', {'colnames', 'data'}, 'xgd_table', cf.to_mpc()
-                # )
-                raise NotImplementedError(
-                    "Reading xGenDataTableFrames from file not yet implemented."
-                )
-            else:
-                raise TypeError(f"Unsupported data type: {type(data)}")
-
-            if index is None:
-                self.table.index = pd.RangeIndex(
-                    start=1, stop=len(self.table) + 1, name="gen"
-                )
-        else:
-            self.setattr("table", pd.DataFrame(columns=colnames, index=index))
-
-    @property
-    def colnames(self):
-        """Get column names as 2D array (MATPOWER xgdt format)."""
-        return np.atleast_2d(self.table.columns)
-
-    @property
-    def data(self):
-        """Get data as NumPy array."""
-        return self.table.to_numpy()
-
-    @property
-    def df(self):
-        return self.table
-
-    def to_df(self):
-        return self.table
+        super().__init__(data=data, index=index, colnames=colnames)
 
     def to_dict(self):
         """
@@ -1079,44 +1131,4 @@ class xGenDataTableFrames(DataFramesStruct):
         Returns:
             dict: Dictionary where keys are column names and values are 2D arrays (n, 1)
         """
-        return {
-            col: self.table[col].values.reshape(-1, 1) for col in self.table.columns
-        }
-
-    def __getattr__(self, name):
-        """Delegate attribute access to the underlying DataFrame."""
-        # if attribute not found in self,
-        if name in self.table.columns:
-            # try to get it from self.table[name]
-            return np.atleast_2d(self.table[name].values)
-        else:
-            # try to get it from self.table
-            return getattr(self.table, name)
-
-    def _repr_html_(self):
-        """HTML representation for Jupyter notebooks."""
-        return self.table._repr_html_()
-
-    def __repr__(self):
-        """String representation."""
-        return repr(self.table)
-
-    def __str__(self):
-        """String representation for print()."""
-        return str(self.table)
-
-    def __getitem__(self, key):
-        """Allow indexing like a DataFrame: obj['col'] or obj[0:5]."""
-        return self.table[key]
-
-    def __setitem__(self, key, value):
-        """Allow setting values like a DataFrame: obj['col'] = values."""
-        self.table[key] = value
-
-    def __len__(self):
-        """Return number of rows."""
-        return len(self.table)
-
-    def __iter__(self):
-        """Iterate over column names like a DataFrame."""
-        return iter(self.table)
+        return super().to_dict()
