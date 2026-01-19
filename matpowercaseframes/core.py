@@ -9,7 +9,7 @@ import warnings
 import numpy as np
 import pandas as pd
 
-from .constants import ATTRIBUTES, COLUMNS
+from .constants import ATTRIBUTES, ATTRIBUTES_INFO, ATTRIBUTES_NAME, COLUMNS
 from .reader import find_attributes, find_name, parse_file
 from .utils import get_attr, has_attr
 
@@ -21,6 +21,15 @@ except ImportError:
     MATPOWER_EXIST = False
 
 
+def display(*args, **kwargs):
+    try:
+        from IPython.display import display as ipython_display
+
+        return ipython_display(*args, **kwargs)
+    except ImportError:
+        print(*args, **kwargs)
+
+
 class BaseStruct:
     """
     Base class for struct-like containers.
@@ -30,9 +39,9 @@ class BaseStruct:
         """
         Initialize the base struct with an empty attributes list.
         """
-        self._attributes = []
+        object.__setattr__(self, "_attributes", [])
 
-    def setattr(self, name, value):
+    def set_attribute(self, name, value):
         """
         Set attribute and track it in _attributes list.
 
@@ -134,9 +143,26 @@ class DataFramesStruct(BaseStruct):
             df = getattr(self, attribute)
             if isinstance(df, pd.DataFrame):
                 df = self._infer_numpy(df)
-                setattr(self, attribute, df)
+                self.set_attribute(attribute, df)
             elif isinstance(df, DataFramesStruct):
                 df.infer_numpy()
+
+    def display(self):
+        data = {"INFO": {}}
+        for attribute in ATTRIBUTES_INFO:
+            if attribute in self._attributes:
+                data["INFO"][attribute] = getattr(self, attribute, None)
+        display(pd.DataFrame(data=data))
+
+        for attribute in self._attributes:
+            df = getattr(self, attribute)
+            if isinstance(df, pd.DataFrame):
+                print(attribute)
+                display(df)
+
+            if isinstance(getattr(self, attribute), DataFramesStruct):
+                print(attribute)
+                df.display()
 
 
 class DataFrameStruct(BaseStruct):
@@ -168,7 +194,7 @@ class DataFrameStruct(BaseStruct):
 
         if data is not None:
             if isinstance(data, dict):
-                self.setattr(
+                self.set_attribute(
                     "table",
                     pd.DataFrame(
                         {k: np.asarray(v).flatten() for k, v in data.items()},
@@ -176,7 +202,9 @@ class DataFrameStruct(BaseStruct):
                     ),
                 )
             elif isinstance(data, (np.ndarray, list)):
-                self.setattr("table", pd.DataFrame(data, columns=colnames, index=index))
+                self.set_attribute(
+                    "table", pd.DataFrame(data, columns=colnames, index=index)
+                )
             elif isinstance(data, str):
                 # TODO:
                 #   1. Support read from file.
@@ -195,7 +223,7 @@ class DataFrameStruct(BaseStruct):
                     start=1, stop=len(self.table) + 1, name="gen"
                 )
         else:
-            self.setattr("table", pd.DataFrame(columns=colnames, index=index))
+            self.set_attribute("table", pd.DataFrame(columns=colnames, index=index))
 
     @property
     def colnames(self):
@@ -399,10 +427,10 @@ class ReservesFrames(DataFramesStruct):
                 if not allow_any_keys:
                     for key, value in data.items():
                         if key in COLUMNS["reserves"]:
-                            self.setattr(key, value)
+                            self.set_attribute(key, value)
                 else:
                     for key, value in data.items():
-                        self.setattr(key, value)
+                        self.set_attribute(key, value)
             else:
                 raise TypeError(f"ReservesFrames data must be a dict, got {type(data)}")
 
@@ -578,7 +606,7 @@ class CaseFrames(DataFramesStruct):
             )
             raise TypeError(message)
 
-    def setattr_as_df(self, name, value, columns_template=None):
+    def set_attribute_as_df(self, name, value, columns_template=None):
         """
         Convert value to DataFrame and assign to attributes.
 
@@ -591,7 +619,7 @@ class CaseFrames(DataFramesStruct):
                 List of column names used for DataFrame column header.
         """
         df = self._get_dataframe(name, value, columns_template=columns_template)
-        self.setattr(name, df)
+        self.set_attribute(name, df)
 
     def update_columns_templates(self, columns_templates):
         """
@@ -680,15 +708,15 @@ class CaseFrames(DataFramesStruct):
             # TODO: compare with GridCal approach
             list_ = parse_file(attribute, string)  # list_ in nested list array
             if list_ is not None:
-                if attribute == "version" or attribute == "baseMVA":
+                if attribute in ATTRIBUTES_INFO:
                     value = list_[0][0]
-                elif attribute in ["bus_name", "branch_name", "gen_name"]:
+                elif attribute in ATTRIBUTES_NAME:
                     value = pd.Index([name[0] for name in list_], name=attribute)
                 else:  # bus, branch, gen, gencost, dcline, dclinecost
                     n_cols = max([len(l) for l in list_])
                     value = self._get_dataframe(attribute, list_, n_cols)
 
-                self.setattr(attribute, value)
+                self.set_attribute(attribute, value)
 
     def _read_oct2py_struct(self, struct, allow_any_keys=False):
         """
@@ -707,9 +735,9 @@ class CaseFrames(DataFramesStruct):
             if attribute not in ATTRIBUTES and not allow_any_keys:
                 continue
 
-            if attribute == "version" or attribute == "baseMVA":
+            if attribute in ATTRIBUTES_INFO:
                 value = list_
-            elif attribute in ["bus_name", "branch_name", "gen_name"]:
+            elif attribute in ATTRIBUTES_NAME:
                 value = pd.Index([name[0] for name in list_], name=attribute)
             elif attribute in ["reserves"]:
                 dfs = reserves_data_to_dataframes(list_)
@@ -719,7 +747,7 @@ class CaseFrames(DataFramesStruct):
                 n_cols = list_.shape[1]
                 value = self._get_dataframe(attribute, list_, n_cols)
 
-            self.setattr(attribute, value)
+            self.set_attribute(attribute, value)
 
         return None
 
@@ -740,16 +768,16 @@ class CaseFrames(DataFramesStruct):
             if attribute not in ATTRIBUTES and not allow_any_keys:
                 continue
 
-            if attribute == "version" or attribute == "baseMVA":
+            if attribute in ATTRIBUTES_INFO:
                 value = array[attribute].item().item()
-            elif attribute in ["bus_name", "branch_name", "gen_name"]:
+            elif attribute in ATTRIBUTES_NAME:
                 value = pd.Index(array[attribute].item(), name=attribute)
             else:  # bus, branch, gen, gencost, dcline, dclinecost
                 data = array[attribute].item()
                 n_cols = data.shape[1]
                 value = self._get_dataframe(attribute, data, n_cols)
 
-            self.setattr(attribute, value)
+            self.set_attribute(attribute, value)
 
     def _read_excel(self, filepath, prefix="", suffix="", allow_any_keys=False):
         """
@@ -773,12 +801,12 @@ class CaseFrames(DataFramesStruct):
         info_sheet_name = f"{prefix}info{suffix}"
         if info_sheet_name in sheets:
             info_data = sheets[info_sheet_name]
-
+            # TODO: support other info fields, skip if not exist
             value = info_data.loc["version", "INFO"].item()
-            self.setattr("version", str(value))
+            self.set_attribute("version", str(value))
 
             value = info_data.loc["baseMVA", "INFO"].item()
-            self.setattr("baseMVA", value)
+            self.set_attribute("baseMVA", value)
 
         # iterate through the remaining sheets
         for attribute, sheet_data in sheets.items():
@@ -796,13 +824,13 @@ class CaseFrames(DataFramesStruct):
             if attribute not in ATTRIBUTES and not allow_any_keys:
                 continue
 
-            if attribute in ["bus_name", "branch_name", "gen_name"]:
+            if attribute in ATTRIBUTES_NAME:
                 # convert back to an index
                 value = pd.Index(sheet_data[attribute].values.tolist(), name=attribute)
             else:
                 value = sheet_data
 
-            self.setattr(attribute, value)
+            self.set_attribute(attribute, value)
 
     def _read_csv_dir(self, dirpath, prefix="", suffix="", allow_any_keys=False):
         """
@@ -840,10 +868,10 @@ class CaseFrames(DataFramesStruct):
             info_data = pd.read_csv(csv_data[info_name], index_col=0)
 
             value = info_data.loc["version", "INFO"].item()
-            self.setattr("version", str(value))
+            self.set_attribute("version", str(value))
 
             value = info_data.loc["baseMVA", "INFO"].item()
-            self.setattr("baseMVA", value)
+            self.set_attribute("baseMVA", value)
 
         # iterate through the remaining CSV files
         for attribute, filepath in csv_data.items():
@@ -858,13 +886,13 @@ class CaseFrames(DataFramesStruct):
             # read CSV file
             sheet_data = pd.read_csv(filepath, index_col=0)
 
-            if attribute in ["bus_name", "branch_name", "gen_name"]:
+            if attribute in ATTRIBUTES_NAME:
                 # convert back to an index
                 value = pd.Index(sheet_data[attribute].values.tolist(), name=attribute)
             else:
                 value = sheet_data
 
-            self.setattr(attribute, value)
+            self.set_attribute(attribute, value)
 
     def _get_dataframe(self, attribute, data, n_cols=None, columns_template=None):
         """
@@ -949,9 +977,7 @@ class CaseFrames(DataFramesStruct):
             allow_any_keys (bool):
                 Whether to update index for any keys beyond standard attributes.
         """
-        for attribute, attribute_name in zip(
-            ["bus", "branch", "gen"], ["bus_name", "branch_name", "gen_name"]
-        ):
+        for attribute, attribute_name in zip(["bus", "branch", "gen"], ATTRIBUTES_NAME):
             attribute_data = getattr(self, attribute)
             try:
                 attribute_name_data = getattr(self, attribute_name)
@@ -1072,9 +1098,9 @@ class CaseFrames(DataFramesStruct):
         version = getattr(self, "version", None)
         baseMVA = getattr(self, "baseMVA", None)
         if F:
-            self.setattr_as_df("case", [[case_name, version, baseMVA, F]])
+            self.set_attribute_as_df("case", [[case_name, version, baseMVA, F]])
         else:
-            self.setattr_as_df("case", [[case_name, version, baseMVA]])
+            self.set_attribute_as_df("case", [[case_name, version, baseMVA]])
 
     def to_pu(self):
         """
@@ -1162,18 +1188,15 @@ class CaseFrames(DataFramesStruct):
 
         # convert to xlsx
         with pd.ExcelWriter(path) as writer:
-            pd.DataFrame(
-                data={
-                    "INFO": {
-                        "version": getattr(self, "version", None),
-                        "baseMVA": getattr(self, "baseMVA", None),
-                    }
-                }
-            ).to_excel(writer, sheet_name=f"{prefix}info{suffix}")
+            data = {"INFO": {}}
+            for attribute in ATTRIBUTES_INFO:
+                if attribute in self._attributes:
+                    data["INFO"][attribute] = getattr(self, attribute, None)
+            pd.DataFrame(data=data).to_excel(writer, sheet_name=f"{prefix}info{suffix}")
             for attribute in self._attributes:
-                if attribute == "version" or attribute == "baseMVA":
+                if attribute in ATTRIBUTES_INFO:
                     continue
-                elif attribute in ["bus_name", "branch_name", "gen_name"]:
+                elif attribute in ATTRIBUTES_NAME:
                     pd.DataFrame(data={attribute: getattr(self, attribute)}).to_excel(
                         writer, sheet_name=f"{prefix}{attribute}{suffix}"
                     )
@@ -1200,19 +1223,16 @@ class CaseFrames(DataFramesStruct):
         # make dir
         os.makedirs(path, exist_ok=True)
 
-        pd.DataFrame(
-            data={
-                "INFO": {
-                    "version": getattr(self, "version", None),
-                    "baseMVA": getattr(self, "baseMVA", None),
-                }
-            }
-        ).to_csv(os.path.join(path, f"{prefix}info{suffix}.csv"))
+        data = {"INFO": {}}
+        for attribute in ATTRIBUTES_INFO:
+            if attribute in self._attributes:
+                data["INFO"][attribute] = getattr(self, attribute, None)
+        pd.DataFrame(data=data).to_csv(os.path.join(path, f"{prefix}info{suffix}.csv"))
 
         for attribute in self._attributes:
-            if attribute == "version" or attribute == "baseMVA":
+            if attribute in ATTRIBUTES_INFO:
                 continue
-            elif attribute in ["bus_name", "branch_name", "gen_name"]:
+            elif attribute in ATTRIBUTES_NAME:
                 pd.DataFrame(data={attribute: getattr(self, attribute)}).to_csv(
                     os.path.join(path, f"{prefix}{attribute}{suffix}.csv")
                 )
@@ -1236,7 +1256,7 @@ class CaseFrames(DataFramesStruct):
         }
         for attribute in self._attributes:
             value = getattr(self, attribute)
-            if attribute in ["bus_name", "branch_name", "gen_name"]:
+            if attribute in ATTRIBUTES_NAME:
                 # NOTE: must be in 2D Cell or 2D np.array
                 data[attribute] = np.atleast_2d(value.values).T
             elif isinstance(value, pd.DataFrame):

@@ -109,7 +109,7 @@ LOAD_COL = ["LD_ID", "LD_BUS", "LD_STATUS", "LD_PD", "LD_QD"]
 
 mpc = m.loadcase('case9', verbose=False)
 cf = CaseFrames(mpc)
-cf.setattr_as_df('load', mpc.load, columns_template=LOAD_COL)
+cf.set_attribute_as_df('load', mpc.load, columns_template=LOAD_COL)
 ```
 
 If data already in `DataFrame`, we can use `setattr` directly as follows,
@@ -122,7 +122,7 @@ m = start_instance()
 
 mpc = m.loadcase('case9', verbose=False)
 cf = CaseFrames(mpc)
-cf.setattr('load', df_load)
+cf.set_attribute('load', df_load)
 ```
 
 ### Export as `xlsx`

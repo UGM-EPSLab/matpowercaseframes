@@ -18,7 +18,13 @@ ATTRIBUTES = (
     "reserves",
     "xgd_table",
     "xgd",
+    "f",
+    "et",
+    "success",
 )
+
+ATTRIBUTES_NAME = ("bus_name", "branch_name", "gen_name")
+ATTRIBUTES_INFO = ("version", "baseMVA", "f", "et", "success")
 
 COLUMNS = {
     "bus": [
