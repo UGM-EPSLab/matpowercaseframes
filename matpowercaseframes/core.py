@@ -21,9 +21,9 @@ except ImportError:
     MATPOWER_EXIST = False
 
 
-class DataFramesStruct:
+class BaseStruct:
     """
-    Base class for struct-like containers with DataFrames.
+    Base class for struct-like containers.
     """
 
     def __init__(self):
@@ -44,6 +44,64 @@ class DataFramesStruct:
         if name not in self._attributes:
             self._attributes.append(name)
         super().__setattr__(name, value)
+
+    @property
+    def attributes(self):
+        """
+        List of attributes in this struct object.
+
+
+        Returns:
+            list: List of attribute names.
+        """
+        return self._attributes
+
+    @staticmethod
+    def _infer_numpy(df):
+        """
+        Infer and convert the data types of a DataFrame to NumPy-compatible types.
+
+
+        Args:
+            df (pd.DataFrame):
+                DataFrame to be processed.
+
+
+        Returns:
+            pd.DataFrame:
+                DataFrame with updated data types.
+        """
+        df = df.convert_dtypes()
+
+        columns = df.select_dtypes(include=["integer"]).columns
+        df[columns] = df[columns].astype(int, errors="ignore")
+
+        columns = df.select_dtypes(include=["float"]).columns
+        df[columns] = df[columns].astype(float, errors="ignore")
+
+        columns = df.select_dtypes(include=["string"]).columns
+        df[columns] = df[columns].astype(str)
+
+        columns = df.select_dtypes(include=["boolean"]).columns
+        df[columns] = df[columns].astype(bool)
+        return df
+
+    def __repr__(self):
+        """
+        String representation of the struct.
+
+
+        Returns:
+            str: String representation showing class name and attributes.
+        """
+        attrs = ", ".join(self._attributes)
+        return f"{self.__class__.__name__}(attributes=[{attrs}])"
+
+
+class DataFramesStruct(BaseStruct):
+    """
+    Base class for struct-like containers with DataFrames.
+    """
 
     def to_dict(self):
         """
@@ -80,60 +138,8 @@ class DataFramesStruct:
             elif isinstance(df, DataFramesStruct):
                 df.infer_numpy()
 
-    @staticmethod
-    def _infer_numpy(df):
-        """
-        Infer and convert the data types of a DataFrame to NumPy-compatible types.
 
-
-        Args:
-            df (pd.DataFrame):
-                DataFrame to be processed.
-
-
-        Returns:
-            pd.DataFrame:
-                DataFrame with updated data types.
-        """
-        df = df.convert_dtypes()
-
-        columns = df.select_dtypes(include=["integer"]).columns
-        df[columns] = df[columns].astype(int, errors="ignore")
-
-        columns = df.select_dtypes(include=["float"]).columns
-        df[columns] = df[columns].astype(float, errors="ignore")
-
-        columns = df.select_dtypes(include=["string"]).columns
-        df[columns] = df[columns].astype(str)
-
-        columns = df.select_dtypes(include=["boolean"]).columns
-        df[columns] = df[columns].astype(bool)
-        return df
-
-    @property
-    def attributes(self):
-        """
-        List of attributes in this struct object.
-
-
-        Returns:
-            list: List of attribute names.
-        """
-        return self._attributes
-
-    def __repr__(self):
-        """
-        String representation of the struct.
-
-
-        Returns:
-            str: String representation showing class name and attributes.
-        """
-        attrs = ", ".join(self._attributes)
-        return f"{self.__class__.__name__}(attributes=[{attrs}])"
-
-
-class DataFrameStruct(DataFramesStruct):
+class DataFrameStruct(BaseStruct):
     """
     A struct-like and DataFrame-like container with MATPOWER compatibility.
     """
@@ -1380,10 +1386,10 @@ class xGenDataTableFrames(DataFrameStruct):
                 - 'colnames' and 'data' keys (xgd_table format)
         """
         xgd_dict = self.to_xgd()
-        xgdt_dict = self.to_xdgt()
+        xgdt_dict = self.to_xgdt()
         return {**xgd_dict, **xgdt_dict}
 
-    def to_xdgt(self):
+    def to_xgdt(self):
         """
         Convert to xgd_table format (for loadgenericdata).
 
