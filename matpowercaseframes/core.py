@@ -147,22 +147,23 @@ class DataFramesStruct(BaseStruct):
             elif isinstance(df, DataFramesStruct):
                 df.infer_numpy()
 
-    def display(self):
+    def display(self, prefix=""):
         data = {"INFO": {}}
         for attribute in ATTRIBUTES_INFO:
             if attribute in self._attributes:
                 data["INFO"][attribute] = getattr(self, attribute, None)
-        display(pd.DataFrame(data=data))
+        if data["INFO"]:
+            print(prefix + "info")
+            display(pd.DataFrame(data=data))
 
         for attribute in self._attributes:
             df = getattr(self, attribute)
             if isinstance(df, pd.DataFrame):
-                print(attribute)
+                print(prefix + f"{attribute}")
                 display(df)
 
             if isinstance(getattr(self, attribute), DataFramesStruct):
-                print(attribute)
-                df.display()
+                df.display(prefix=prefix + f"{attribute}.")
 
 
 class DataFrameStruct(BaseStruct):
