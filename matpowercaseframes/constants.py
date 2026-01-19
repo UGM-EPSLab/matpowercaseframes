@@ -16,7 +16,15 @@ ATTRIBUTES = (
     "dclinecost",
     "case",
     "reserves",
+    "xgd_table",
+    "xgd",
+    "f",
+    "et",
+    "success",
 )
+
+ATTRIBUTES_NAME = ("bus_name", "branch_name", "gen_name")
+ATTRIBUTES_INFO = ("version", "baseMVA", "f", "et", "success")
 
 COLUMNS = {
     "bus": [
@@ -114,9 +122,46 @@ COLUMNS = {
         "MU_QMAXT",
     ],
     "reserves": {
+        "zones": [],
         "req": ["PREQ"],
         "cost": ["C1"],
         "qty": ["PQTY"],
+    },
+    "xgd_table": [
+        "CommitKey",
+        "CommitSched",
+        "MinUp",
+        "MinDown",
+        "PositiveActiveReservePrice",
+        "PositiveActiveReserveQuantity",
+        "NegativeActiveReservePrice",
+        "NegativeActiveReserveQuantity",
+        "PositiveActiveDeltaPrice",
+        "NegativeActiveDeltaPrice",
+        "PositiveLoadFollowReservePrice",
+        "PositiveLoadFollowReserveQuantity",
+        "NegativeLoadFollowReservePrice",
+        "NegativeLoadFollowReserveQuantity",
+    ],
+    "xgd": {  # xGenData
+        "CommitSched": [],
+        "InitialPg": [],
+        "RampWearCostCoeff": [],
+        "PositiveActiveReservePrice": [],
+        "PositiveActiveReserveQuantity": [],
+        "NegativeActiveReservePrice": [],
+        "NegativeActiveReserveQuantity": [],
+        "PositiveActiveDeltaPrice": [],
+        "NegativeActiveDeltaPrice": [],
+        "PositiveLoadFollowReservePrice": [],
+        "PositiveLoadFollowReserveQuantity": [],
+        "NegativeLoadFollowReservePrice": [],
+        "NegativeLoadFollowReserveQuantity": [],
+        "TerminalPg": [],
+        "CommitKey": [],
+        "InitialState": [],
+        "MinUp": [],
+        "MinDow": [],
     },
     "if": {
         # negative 'BRANCHIDX' defines opposite direction

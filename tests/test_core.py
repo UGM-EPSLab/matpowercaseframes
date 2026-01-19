@@ -6,8 +6,7 @@ import pytest
 
 from matpowercaseframes import CaseFrames
 from matpowercaseframes.idx import BUS_I, BUS_TYPE
-
-from .__init__ import assert_cf_equal
+from matpowercaseframes.testing import assert_frames_struct_equal
 
 """
     pytest -n auto -rA --lf -c pyproject.toml --cov-report term-missing --cov=matpowercaseframes tests/
@@ -292,9 +291,9 @@ def test_reset_index_and_infer_numpy_case9():
     assert cf_reset.branch["F_BUS"].between(0, len(cf_reset.bus) - 1).all()
     assert cf_reset.branch["T_BUS"].between(0, len(cf_reset.bus) - 1).all()
     assert cf_reset.gen["GEN_BUS"].between(0, len(cf_reset.bus) - 1).all()
-    assert_cf_equal(cf, cf_reset)
+    assert_frames_struct_equal(cf, cf_reset)
 
     # reset multiple times should not change anything
     cf_reset.reset_index()
     cf_reset.reset_index()
-    assert_cf_equal(cf, cf_reset)
+    assert_frames_struct_equal(cf, cf_reset)
