@@ -22,15 +22,20 @@ except ImportError:
 
 
 class DataFramesStruct:
-    """Base class for struct-like containers with DataFrames."""
+    """
+    Base class for struct-like containers with DataFrames.
+    """
 
     def __init__(self):
-        """Initialize the base struct with an empty attributes list."""
+        """
+        Initialize the base struct with an empty attributes list.
+        """
         self._attributes = []
 
     def setattr(self, name, value):
         """
         Set attribute and track it in _attributes list.
+
 
         Args:
             name (str): Attribute name.
@@ -46,7 +51,8 @@ class DataFramesStruct:
 
 
         Returns:
-            dict: Dictionary with attribute names as keys and their data as values.
+            dict:
+                Dictionary with attribute names as keys and their data as values.
         """
         # TODO: support mpc = cf.to_dict() with reserves data
         data = {}
@@ -79,11 +85,15 @@ class DataFramesStruct:
         """
         Infer and convert the data types of a DataFrame to NumPy-compatible types.
 
+
         Args:
-            df (pd.DataFrame): DataFrame to be processed.
+            df (pd.DataFrame):
+                DataFrame to be processed.
+
 
         Returns:
-            pd.DataFrame: DataFrame with updated data types.
+            pd.DataFrame:
+                DataFrame with updated data types.
         """
         df = df.convert_dtypes()
 
@@ -105,19 +115,49 @@ class DataFramesStruct:
         """
         List of attributes in this struct object.
 
+
         Returns:
             list: List of attribute names.
         """
         return self._attributes
 
     def __repr__(self):
-        """String representation of the struct."""
+        """
+        String representation of the struct.
+
+
+        Returns:
+            str: String representation showing class name and attributes.
+        """
         attrs = ", ".join(self._attributes)
         return f"{self.__class__.__name__}(attributes=[{attrs}])"
 
 
 class DataFrameStruct(DataFramesStruct):
+    """
+    A struct-like and DataFrame-like container with MATPOWER compatibility.
+    """
+
     def __init__(self, data, index, colnames):
+        """
+        Initialize DataFrameStruct with data, index, and column names.
+
+
+        Args:
+            data (dict | np.ndarray | list | str | None):
+                Data for the table.
+            index (pd.Index | None):
+                Row index for the DataFrame.
+            colnames (list | None):
+                Column names for the DataFrame.
+
+
+        Raises:
+            NotImplementedError:
+                If data is a string (file reading not yet supported).
+            TypeError:
+                If data type is not supported.
+        """
         super().__init__()
 
         if data is not None:
@@ -153,32 +193,85 @@ class DataFrameStruct(DataFramesStruct):
 
     @property
     def colnames(self):
-        """Get column names as 2D array (MATPOWER xgdt format)."""
+        """
+        Get column names as 2D array (MATPOWER xgdt format).
+
+
+        Returns:
+            np.ndarray:
+                2D array of column names.
+        """
         return np.atleast_2d(self.table.columns)
 
     @property
     def data(self):
-        """Get data as NumPy array."""
+        """
+        Get data as NumPy array.
+
+
+        Returns:
+            np.ndarray:
+                Data array.
+        """
         return self.table.to_numpy()
 
     @property
     def df(self):
+        """
+        Get the underlying DataFrame.
+
+
+        Returns:
+            pd.DataFrame:
+                The underlying DataFrame.
+        """
         return self.table
 
     def to_df(self):
+        """
+        Convert to DataFrame.
+
+
+        Returns:
+            pd.DataFrame:
+                The underlying DataFrame.
+        """
         return self.table
 
     def to_dict(self):
+        """
+        Convert to dictionary with column names as keys and 2D arrays as values.
+
+
+        Returns:
+            dict:
+                Dictionary with column data as 2D arrays.
+        """
         return {
             col: self.table[col].values.reshape(-1, 1) for col in self.table.columns
         }
 
     def infer_numpy(self):
+        """
+        Infer and convert data types to NumPy-compatible types.
+        """
         df = self._infer_numpy(self.table)
         self.table = df
 
     def __getattr__(self, name):
-        """Delegate attribute access to the underlying DataFrame."""
+        """
+        Delegate attribute access to the underlying DataFrame.
+
+
+        Args:
+            name (str):
+                Attribute name to access.
+
+
+        Returns:
+            np.ndarray | Any:
+                Column data as 2D array or DataFrame attribute.
+        """
         # if attribute not found in self,
         if name in self.table.columns:
             # try to get it from self.table[name]
@@ -188,44 +281,111 @@ class DataFrameStruct(DataFramesStruct):
             return getattr(self.table, name)
 
     def _repr_html_(self):
-        """HTML representation for Jupyter notebooks."""
+        """
+        HTML representation for Jupyter notebooks.
+
+
+        Returns:
+            str:
+                HTML representation of the DataFrame.
+        """
         return self.table._repr_html_()
 
     def __repr__(self):
-        """String representation."""
+        """
+        String representation.
+
+
+        Returns:
+            str:
+                String representation of the DataFrame.
+        """
         return repr(self.table)
 
     def __str__(self):
-        """String representation for print()."""
+        """
+        String representation for print().
+
+
+        Returns:
+            str:
+                String representation of the DataFrame.
+        """
         return str(self.table)
 
     def __getitem__(self, key):
-        """Allow indexing like a DataFrame: obj['col'] or obj[0:5]."""
+        """
+        Allow indexing like a DataFrame.
+
+
+        Args:
+            key:
+                Index or column key.
+
+
+        Returns:
+            pd.Series | pd.DataFrame:
+                Indexed data.
+        """
         return self.table[key]
 
     def __setitem__(self, key, value):
-        """Allow setting values like a DataFrame: obj['col'] = values."""
+        """
+        Allow setting values like a DataFrame.
+
+
+        Args:
+            key:
+                Column key.
+            value:
+                Values to set.
+        """
         self.table[key] = value
 
     def __len__(self):
-        """Return number of rows."""
+        """
+        Return number of rows.
+
+
+        Returns:
+            int:
+                Number of rows in the DataFrame.
+        """
         return len(self.table)
 
     def __iter__(self):
-        """Iterate over column names like a DataFrame."""
+        """
+        Iterate over column names like a DataFrame.
+
+
+        Returns:
+            Iterator:
+                Iterator over column names.
+        """
         return iter(self.table)
 
 
 class ReservesFrames(DataFramesStruct):
-    """A struct-like container for reserves data, similar to CaseFrames."""
+    """
+    A struct-like container for reserves data, similar to CaseFrames.
+    """
 
     def __init__(self, data=None, allow_any_keys=False):
         """
         Initialize ReservesFrames with optional data.
 
+
         Args:
-            data (dict, optional): Dictionary containing reserves DataFrames.
-                Expected keys: 'zones', 'req', 'cost', 'qty'
+            data (dict | None):
+                Dictionary containing reserves DataFrames.
+                Expected keys: 'zones', 'req', 'cost', 'qty'.
+            allow_any_keys (bool):
+                Whether to allow any keys beyond expected keys.
+
+
+        Raises:
+            TypeError:
+                If data is not a dictionary.
         """
         super().__init__()
         if data is not None:
@@ -242,6 +402,10 @@ class ReservesFrames(DataFramesStruct):
 
 
 class CaseFrames(DataFramesStruct):
+    """
+    Main class for MATPOWER case data representation using DataFrames.
+    """
+
     def __init__(
         self,
         data=None,
@@ -256,14 +420,13 @@ class CaseFrames(DataFramesStruct):
         """
         Load data and initialize the CaseFrames class.
 
+
         Args:
-            data (str | dict | oct2py.io.Struct | np.ndarray):
+            data (str | dict | oct2py.io.Struct | np.ndarray | None, optional):
                 - str: File path to MATPOWER case name, .m file, or .xlsx file.
                 - dict: Data from a structured dictionary.
                 - oct2py.io.Struct: Octave's oct2py struct.
                 - np.ndarray: Structured NumPy array with named fields.
-            update_index (bool, optional):
-                Whether to update the index numbering. Defaults to True.
             load_case_engine (object, optional):
                 External engine used to call MATPOWER `loadcase` (e.g. Octave). Defaults
                 to None. If None, parse data using matpowercaseframes.reader.parse_file.
@@ -276,14 +439,18 @@ class CaseFrames(DataFramesStruct):
             allow_any_keys (bool, optional):
                 Whether to allow any keys beyond the predefined ATTRIBUTES. Defaults to
                 False.
+            update_index (bool, optional):
+                Whether to update the index numbering. Defaults to True.
             columns_templates (dict, optional):
                 Custom column templates for DataFrames. Defaults to None.
             reset_index (bool, optional):
                 Whether to reset indices to 0-based numbering. Defaults to False.
 
         Raises:
-            TypeError: If the input data format is unsupported.
-            FileNotFoundError: If the specified file cannot be found.
+            TypeError:
+                If the input data format is unsupported.
+            FileNotFoundError:
+                If the specified file cannot be found.
         """
         # TODO: support Path object
         super().__init__()
@@ -312,6 +479,29 @@ class CaseFrames(DataFramesStruct):
         suffix="",
         allow_any_keys=False,
     ):
+        """
+        Read data from various sources and populate the CaseFrames object.
+
+
+        Args:
+            data (str | dict | np.ndarray | None, optional):
+                Data source.
+            load_case_engine (object | None, optional):
+                External engine for loading MATPOWER cases.
+            prefix (str, optional):
+                Prefix for attribute names.
+            suffix (str, optional):
+                Suffix for attribute names.
+            allow_any_keys (bool, optional):
+                Whether to allow any keys beyond ATTRIBUTES.
+
+
+        Raises:
+            FileNotFoundError:
+                If file path is invalid.
+            TypeError:
+                If data type is not supported.
+        """
         if isinstance(data, str):
             # TODO: support Path
             # TYPE: str of path
@@ -384,17 +574,28 @@ class CaseFrames(DataFramesStruct):
 
     def setattr_as_df(self, name, value, columns_template=None):
         """
-        Convert value to df and assign to attributes.
+        Convert value to DataFrame and assign to attributes.
+
 
         Args:
-            name (str): Attribute name.
+            name (str):
+                Attribute name.
             value: Data that can be converted into DataFrame.
-            columns_template: List of column names used for DataFrame column header.
+            columns_template (list | None):
+                List of column names used for DataFrame column header.
         """
         df = self._get_dataframe(name, value, columns_template=columns_template)
         self.setattr(name, df)
 
     def update_columns_templates(self, columns_templates):
+        """
+        Update the column templates dictionary.
+
+
+        Args:
+            columns_templates (dict):
+                Dictionary of column templates to update.
+        """
         self.columns_templates.update(columns_templates)
 
     @staticmethod
@@ -402,11 +603,14 @@ class CaseFrames(DataFramesStruct):
         """
         Determine the correct file path for the given input.
 
+
         Args:
             path (str): File path, directory path, or MATPOWER case name.
 
+
         Returns:
             str: Resolved file path or directory path.
+
 
         Raises:
             FileNotFoundError: If the file or MATPOWER case cannot be found.
@@ -448,11 +652,14 @@ class CaseFrames(DataFramesStruct):
         """
         Read and parse a MATPOWER file.
 
-        Old attribute is not guaranted to be replaced in re-read. This method is
+        Old attribute is not guaranteed to be replaced in re-read. This method is
         intended to be used only during initialization.
 
         Args:
-            filepath (str): Path to the MATPOWER file.
+            filepath (str):
+                Path to the MATPOWER file.
+            allow_any_keys (bool):
+                Whether to allow any keys beyond ATTRIBUTES.
         """
         # TODO: support reserves
         with open(filepath) as f:
@@ -481,9 +688,12 @@ class CaseFrames(DataFramesStruct):
         """
         Read data from an Octave struct or dictionary.
 
+
         Args:
             struct (dict):
                 Data in structured dictionary or Octave's oct2py struct format.
+            allow_any_keys (bool):
+                Whether to allow any keys beyond ATTRIBUTES.
         """
         self.name = ""
 
@@ -511,8 +721,12 @@ class CaseFrames(DataFramesStruct):
         """
         Read data from a structured NumPy array.
 
+
         Args:
-            array (np.ndarray): Structured NumPy array with named fields.
+            array (np.ndarray):
+                Structured NumPy array with named fields.
+            allow_any_keys (bool):
+                Whether to allow any keys beyond ATTRIBUTES.
         """
         # TODO: support reserves
         self.name = ""
@@ -535,10 +749,16 @@ class CaseFrames(DataFramesStruct):
         """
         Read data from an Excel file.
 
+
         Args:
-            filepath (str): File path for the Excel file.
-            prefix (str): Sheet prefix for each attribute in the Excel file.
-            suffix (str): Sheet suffix for each attribute in the Excel file.
+            filepath (str):
+                File path for the Excel file.
+            prefix (str):
+                Sheet prefix for each attribute in the Excel file.
+            suffix (str):
+                Sheet suffix for each attribute in the Excel file.
+            allow_any_keys (bool):
+                Whether to allow any keys beyond ATTRIBUTES.
         """
         # TODO: support reserves
         sheets = pd.read_excel(filepath, index_col=0, sheet_name=None)
@@ -582,11 +802,16 @@ class CaseFrames(DataFramesStruct):
         """
         Read data from a directory of CSV files.
 
+
         Args:
-            dirpath (str): Directory path containing the CSV files.
-            prefix (str): File prefix for each attribute CSV file.
-            suffix (str): File suffix for each attribute CSV file.
-            allow_any_keys (bool): Whether to allow any keys beyond ATTRIBUTES.
+            dirpath (str):
+                Directory path containing the CSV files.
+            prefix (str):
+                File prefix for each attribute CSV file.
+            suffix (str):
+                File suffix for each attribute CSV file.
+            allow_any_keys (bool):
+                Whether to allow any keys beyond ATTRIBUTES.
         """
         # TODO: support reserves
         # create a dictionary mapping attribute names to file paths
@@ -639,13 +864,21 @@ class CaseFrames(DataFramesStruct):
         """
         Create a DataFrame with proper columns from raw data.
 
+
         Args:
-            attribute (str): Name of the attribute.
-            data (list | np.ndarray): Data for the attribute.
-            n_cols (int): Number of columns in the data.
+            attribute (str):
+                Name of the attribute.
+            data (list | np.ndarray):
+                Data for the attribute.
+            n_cols (int | None):
+                Number of columns in the data.
+            columns_template (list | None):
+                Custom column template.
+
 
         Returns:
             pd.DataFrame: DataFrame with appropriate columns.
+
 
         Raises:
             IndexError:
@@ -703,8 +936,12 @@ class CaseFrames(DataFramesStruct):
 
     def _update_index(self, allow_any_keys=False):
         """
-        Update the index of the bus, branch, and generator tables based on naming. If
-        naming is not available, index start from 1 to N.
+        Update the index of the bus, branch, and generator tables based on naming.
+
+
+        Args:
+            allow_any_keys (bool):
+                Whether to update index for any keys beyond standard attributes.
         """
         for attribute, attribute_name in zip(
             ["bus", "branch", "gen"], ["bus_name", "branch_name", "gen_name"]
@@ -746,6 +983,9 @@ class CaseFrames(DataFramesStruct):
             self._update_index_any()
 
     def _update_index_any(self):
+        """
+        Update index for any additional attributes that are DataFrames or Series.
+        """
         for attribute in self._attributes:
             if attribute in ["bus", "branch", "gen", "gencost", "reserves"]:
                 continue
@@ -766,19 +1006,11 @@ class CaseFrames(DataFramesStruct):
         """
         Reset indices and remap bus-related indices to 0-based values.
 
-        This method ensures that:
-            1. All DataFrames in the case have their row indices reset.
-            2. Bus numbers (BUS_I) are renumbered from 0 to n-1.
-            3. References to buses in branch (F_BUS, T_BUS) and gen (GEN_BUS) tables
-            are updated consistently with the new numbering.
 
         Notes:
-            - This method requires `infer_numpy` to be called beforehand,
-            as mapping does not support float-backed integers.
+            - This method requires `infer_numpy` to be called beforehand, as mapping
+              does not support float-backed integers.
             - Support for additional tables (e.g., dcline) is not yet implemented.
-
-        Returns:
-            None: The CaseFrames object is modified in place.
         """
         # store original gen index mapping before resetting, used in reserves
         gen_map = {v: k for k, v in enumerate(self.gen.index)}
@@ -815,6 +1047,18 @@ class CaseFrames(DataFramesStruct):
                 self.reserves.qty.index.name = "gen"
 
     def add_schema_case(self, F=None):
+        """
+        Add case attribute to follow caseformat/schema.
+
+
+        Args:
+            F (float | None):
+                Optional frequency value.
+
+
+        Warnings:
+            This might be deprecated in the future if MATPOWER defines this later.
+        """
         # add case to follow casefromat/schema
         # !WARNING:
         # this might be deprecated in the future if matpower define this later
@@ -829,6 +1073,7 @@ class CaseFrames(DataFramesStruct):
     def to_pu(self):
         """
         Create a new CaseFrame object with data in p.u. and rad.
+
 
         Returns:
             CaseFrames: CaseFrames object with data in p.u. and rad.
@@ -894,6 +1139,7 @@ class CaseFrames(DataFramesStruct):
         """
         Save the CaseFrames data into a single Excel file.
 
+
         Args:
             path (str): File path for the Excel file.
             prefix (str): Sheet prefix for each attribute for the Excel file.
@@ -934,10 +1180,16 @@ class CaseFrames(DataFramesStruct):
         """
         Save the CaseFrames data into multiple CSV files.
 
+
         Args:
-            path (str): Directory path where the CSV files will be saved.
-            prefix (str): Sheet prefix for each attribute for the CSV files.
-            suffix (str): Sheet suffix for each attribute for the CSV files.
+            path (str):
+                Directory path where the CSV files will be saved.
+            prefix (str):
+                File prefix for each attribute CSV file.
+            suffix (str):
+                File suffix for each attribute CSV file.
+            attributes (list | None):
+                Specific attributes to save (unused parameter).
         """
         # make dir
         os.makedirs(path, exist_ok=True)
@@ -967,7 +1219,6 @@ class CaseFrames(DataFramesStruct):
         """
         Convert the CaseFrames data into a dictionary.
 
-        The value of the data will be in str, numeric, and list.
 
         Returns:
             dict: Dictionary with attribute names as keys and their data as values.
@@ -992,10 +1243,8 @@ class CaseFrames(DataFramesStruct):
 
     def to_mpc(self):
         """
-        Convert the CaseFrames data into a format compatible with MATPOWER (as a
-        dictionary).
+        Convert the CaseFrames data into a format compatible with MATPOWER.
 
-        The value of the data will be in str, numeric, and list.
 
         Returns:
             dict: MATPOWER-compatible dictionary with data.
@@ -1006,10 +1255,22 @@ class CaseFrames(DataFramesStruct):
         """
         Convert to format compatible with caseformat/schema.
 
-        This method also mutate the CaseFormat by adding "case" as a new
-        attribute if not exists.
 
-        See more:
+        Args:
+            path (str):
+                Directory path where the schema files will be saved.
+            prefix (str):
+                File prefix for each attribute.
+            suffix (str):
+                File suffix for each attribute.
+
+
+        Notes:
+            This method also mutates the CaseFrames by adding "case" as a new attribute
+            if not exists.
+
+
+        See Also:
             https://github.com/caseformat/schema
         """
 
@@ -1022,11 +1283,14 @@ def reserves_data_to_dataframes(reserves):
     """
     Convert all mpc.reserves struct data to DataFrames.
 
+
     Args:
-        reserves: dict or oct2py.io.Struct of mpc.reserves object from MATPOWER
+        reserves (dict | oct2py.io.Struct):
+            mpc.reserves object from MATPOWER.
+
 
     Returns:
-        dict or oct2py.io.Struct containing:
+        dict: Dictionary containing:
             - 'zones': Reserve zones DataFrame
             - 'req': Reserve requirements DataFrame
             - 'cost': Reserve costs DataFrame (if exists)
@@ -1066,18 +1330,24 @@ def reserves_data_to_dataframes(reserves):
 
 class xGenDataTableFrames(DataFrameStruct):
     """
-    A struct-like and DataFrame-like container for xGenData with MATPOWER
-    compatibility. Support standard DataFrame operations.
+    A struct-like and DataFrame-like container for xGenData with MATPOWER compatibility.
+
+
+    Supports standard DataFrame operations.
     """
 
     def __init__(self, data=None, colnames=None, index=None):
         """
-        Initialize DataTableFrames with optional data.
+        Initialize xGenDataTableFrames with optional data.
+
 
         Args:
-            data (np.ndarray | list | dict, optional): Data for DataTableFrames.
-            colnames (list, optional): Column names. Defaults to None.
-            index (pd.Index, optional): Row index. Defaults to None.
+            data (np.ndarray | list | dict | None):
+                Data for xGenDataTableFrames.
+            colnames (list | None):
+                Column names.
+            index (pd.Index | None):
+                Row index.
         """
         if data is not None and colnames is None:
             if isinstance(data, dict):
@@ -1103,6 +1373,7 @@ class xGenDataTableFrames(DataFrameStruct):
         """
         Convert to combined dict with both xgd and xgd_table formats.
 
+
         Returns:
             dict: Combined dictionary with:
                 - Column names as keys with 2D array values (xgd format)
@@ -1112,12 +1383,14 @@ class xGenDataTableFrames(DataFrameStruct):
         xgdt_dict = self.to_xdgt()
         return {**xgd_dict, **xgdt_dict}
 
-    def to_xgdt(self):
+    def to_xdgt(self):
         """
         Convert to xgd_table format (for loadgenericdata).
 
+
         Returns:
-            dict: Dictionary with 'colnames' (2D array) and 'data' (2D array)
+            dict:
+                Dictionary with 'colnames' (2D array) and 'data' (2D array).
         """
         return {
             "colnames": self.colnames,
@@ -1128,7 +1401,9 @@ class xGenDataTableFrames(DataFrameStruct):
         """
         Convert to xgd struct format (for loadxgendata/MOST functions).
 
+
         Returns:
-            dict: Dictionary where keys are column names and values are 2D arrays (n, 1)
+            dict:
+                Dictionary where keys are column names and values are 2D arrays (n, 1).
         """
         return super().to_dict()
