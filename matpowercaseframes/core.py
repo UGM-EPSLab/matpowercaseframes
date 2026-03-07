@@ -1259,6 +1259,7 @@ class CaseFrames(DataFramesStruct):
             value = getattr(self, attribute)
             if attribute in ATTRIBUTES_NAME:
                 # NOTE: must be in 2D Cell or 2D np.array
+                # ("bus_name", "branch_name", "gen_name")
                 data[attribute] = np.atleast_2d(value.values).T
             elif isinstance(value, pd.DataFrame):
                 data[attribute] = value.values.tolist()
@@ -1268,15 +1269,68 @@ class CaseFrames(DataFramesStruct):
                 data[attribute] = value
         return data
 
-    def to_mpc(self):
+    def to_matlab(self):
+        """
+        Convert the CaseFrames data into a MATLAB-compatible dictionary using
+        matlab.double for array fields.
+
+
+        Returns:
+            dict: Dictionary with MATLAB-compatible values (matlab.double for arrays).
+
+
+        Raises:
+            ImportError: If matlab.engine is not available.
+        """
+        try:
+            import matlab
+        except ImportError:
+            raise ImportError(
+                "matlab.engine is required for MATLAB backend. "
+                "Install MATLAB Engine API for Python."
+            )
+
+        data = {
+            "version": None,
+            "baseMVA": None,
+        }
+        for attribute in self._attributes:
+            value = getattr(self, attribute)
+            if attribute in ATTRIBUTES_NAME:
+                # TODO: test with case with data_names
+                data[attribute] = np.atleast_2d(value.values).T.tolist()
+            elif isinstance(value, pd.DataFrame):
+                data[attribute] = matlab.double(value.values.tolist())
+            elif isinstance(value, DataFramesStruct):
+                # TODO: test with case with structs
+                # convert nested structs (e.g. reserves) as plain dict
+                data[attribute] = value.to_dict()
+            else:
+                data[attribute] = value
+        return data
+
+    def to_mpc(self, backend=None):
         """
         Convert the CaseFrames data into a format compatible with MATPOWER.
+
+
+        Args:
+            backend (str | None):
+                Backend format. None or 'dict' returns plain dict,
+                'matlab' returns matlab.double arrays for matrix fields.
 
 
         Returns:
             dict: MATPOWER-compatible dictionary with data.
         """
-        return self.to_dict()
+        if backend is None:
+            return self.to_dict()
+        elif backend == "octave":
+            raise NotImplementedError("Octave backend is not implemented yet.")
+        elif backend == "matlab":
+            return self.to_matlab()
+        elif backend == "numpy":
+            raise NotImplementedError("NumPy backend is not implemented yet.")
 
     def to_schema(self, path, prefix="", suffix=""):
         """

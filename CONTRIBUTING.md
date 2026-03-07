@@ -2,17 +2,34 @@
 
 ## env
 
+To install Python environment, use:
+
 ```sh
-uv venv env --python 3.14
+uv venv env --python 3.12
 source env/bin/activate
+uv pip install pip
 ```
 
+> [!Note]  
+> Python 3.12 currently needed for `matlabengine`.
+
 ## packages
+
+### Requirements
 
 ```sh
 uv pip install pru
 pru -r requirements-all.txt
 ```
+
+### Matlab
+
+Optionally, if you want to test matlab compatibility, you can install `matlabengine`
+
+```shell
+uv pip install matlabengine
+```
+
 
 ## Install in development mode
 

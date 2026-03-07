@@ -1,14 +1,14 @@
-pandas==3.0.0rc1
-numpy==2.4.1
+pandas==3.0.1
+numpy==2.4.2
 
 openpyxl==3.1.5
 
 oct2py==5.8.0
-matpower==8.1.0.2.2.3
+matpower==8.1.0.2.3.0
 
 pre-commit==4.5.1
-ruff==0.14.13
-setuptools==80.9.0
+ruff==0.15.5
+setuptools==82.0.0
 
 pytest==9.0.2
 pytest-cov==7.0.0
