@@ -13,7 +13,7 @@ from matpowercaseframes.testing import assert_frames_struct_equal
     case9          : default MATPOWER case, polynomial gencost (TYPE=2)
     case4_dist     : small distribution network case
     case118        : medium-scale IEEE case, tests all three loading methods
-    case_RTS_GMLC  : piecewise linear gencost (TYPE=1)
+    case_RTS_GMLC  : piecewise linear gencost (TYPE=1) and contains bus_name
     t_case9_dcline : case with DC lines
     case16am       : case with executable code inside .m file, requires load_case_engine
     case9_load     : case with non-standard keys, tests allow_any_keys
