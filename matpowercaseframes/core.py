@@ -555,20 +555,11 @@ class CaseFrames(DataFramesStruct):
                 path_no_ext, ext = os.path.splitext(path)
 
                 if ext == ".m":
-                    # read `.m` file
-                    if load_case_engine is None:
-                        # read with matpower parser
-                        self._read_matpower(
-                            filepath=path,
-                            allow_any_keys=allow_any_keys,
-                        )
-                    else:
-                        # read using loadcase
-                        mpc = load_case_engine.loadcase(path)
-                        self._read_oct2py_struct(
-                            struct=mpc,
-                            allow_any_keys=allow_any_keys,
-                        )
+                    self._read_m_file(
+                        path,
+                        load_case_engine=load_case_engine,
+                        allow_any_keys=allow_any_keys,
+                    )
                 elif ext == ".xlsx":
                     # read `.xlsx` file
                     self._read_excel(
@@ -683,6 +674,31 @@ class CaseFrames(DataFramesStruct):
         message = f"Can't find data at {os.path.abspath(path)}"
         raise FileNotFoundError(message)
 
+    def _read_m_file(self, path, load_case_engine=None, allow_any_keys=False):
+        # read `.m` file
+        if load_case_engine is None:
+            # read with matpower parser
+            self._read_matpower(
+                filepath=path,
+                allow_any_keys=allow_any_keys,
+            )
+        else:
+            # read using loadcase
+            mpc = load_case_engine.loadcase(path)
+
+            # detect engine type
+            engine_type = _detect_engine(load_case_engine)
+            if engine_type == "matlab":
+                self._read_matlab_struct(
+                    struct=mpc,
+                    allow_any_keys=allow_any_keys,
+                )
+            else:
+                self._read_oct2py_struct(
+                    struct=mpc,
+                    allow_any_keys=allow_any_keys,
+                )
+
     def _read_matpower(self, filepath, allow_any_keys=False):
         """
         Read and parse a MATPOWER file.
@@ -747,6 +763,42 @@ class CaseFrames(DataFramesStruct):
                 list_ = np.atleast_2d(list_)
                 n_cols = list_.shape[1]
                 value = self._get_dataframe(attribute, list_, n_cols)
+
+            self.set_attribute(attribute, value)
+
+        return None
+
+    def _read_matlab_struct(self, struct, allow_any_keys=False):
+        """
+        Read data from a MATLAB engine struct.
+
+        MATLAB engine returns cell arrays (e.g. bus_name) as flat lists of str,
+        unlike oct2py which wraps each entry in a list.
+
+        Args:
+            struct (matlab.engine struct / dict-like):
+                Data returned by matlab.engine loadcase.
+            allow_any_keys (bool):
+                Whether to allow any keys beyond ATTRIBUTES.
+        """
+        self.name = ""
+
+        for attribute, list_ in struct.items():
+            if attribute not in ATTRIBUTES and not allow_any_keys:
+                continue
+
+            if attribute in ATTRIBUTES_INFO:
+                value = list_
+            elif attribute in ATTRIBUTES_NAME:
+                # MATLAB engine cell array of strings comes as a flat list of str
+                value = pd.Index(list(list_), name=attribute)
+            elif attribute in ["reserves"]:
+                dfs = reserves_data_to_dataframes(list_)
+                value = ReservesFrames(dfs)
+            else:  # bus, branch, gen, gencost, dcline, dclinecost
+                arr = np.atleast_2d(np.array(list_))
+                n_cols = arr.shape[1]
+                value = self._get_dataframe(attribute, arr, n_cols)
 
             self.set_attribute(attribute, value)
 
@@ -1297,8 +1349,9 @@ class CaseFrames(DataFramesStruct):
         for attribute in self._attributes:
             value = getattr(self, attribute)
             if attribute in ATTRIBUTES_NAME:
-                # TODO: test with case with data_names
-                data[attribute] = np.atleast_2d(value.values).T.tolist()
+                # NOTE: matlab does not support [N, 1] cell array.
+                # See: https://github.com/mathworks/matlab-engine-for-python/issues/61
+                continue
             elif isinstance(value, pd.DataFrame):
                 data[attribute] = matlab.double(value.values.tolist())
             elif isinstance(value, DataFramesStruct):
@@ -1358,6 +1411,30 @@ class CaseFrames(DataFramesStruct):
         if "case" not in self._attributes:
             self.add_schema_case()
         self.to_csv(path, prefix=prefix, suffix=suffix)
+
+
+def _detect_engine(m):
+    """Detect engine type from instance."""
+    try:
+        from oct2py import Oct2Py
+
+        if isinstance(m, Oct2Py):
+            return "octave"
+    except ImportError:
+        pass
+
+    try:
+        import matlab.engine
+
+        if isinstance(m, matlab.engine.MatlabEngine):
+            return "matlab"
+    except ImportError:
+        pass
+
+    raise ValueError(
+        f"Unknown engine type: {type(m)}. Expected Oct2Py or"
+        " matlab.engine.MatlabEngine."
+    )
 
 
 def reserves_data_to_dataframes(reserves):

@@ -41,6 +41,7 @@ uv pip install -e ."[dev]"
 
 ```shell
 pytest -n auto -rA --lf -c pyproject.toml --cov-report term-missing --cov=matpowercaseframes tests/
+pytest --lf -rA -c pyproject.toml --cov-report term-missing --cov=matpowercaseframes --nbmake
 ```
 
 ## Pre-Commit

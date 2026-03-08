@@ -2,10 +2,18 @@ import warnings
 
 import numpy as np
 import pandas as pd
-from matpower import path_matpower, start_instance
+import pytest
+from matpower import path_matpower, run_matlab_cmd, start_instance
 
 from matpowercaseframes import CaseFrames, ReservesFrames, xGenDataTableFrames
 from matpowercaseframes.testing import assert_frames_struct_equal
+
+try:
+    import matlab.engine  # noqa: F401
+
+    MATLAB_AVAILABLE = True
+except ImportError:
+    MATLAB_AVAILABLE = False
 
 """
     pytest -n auto -rA --cov-report term --cov=matpowercaseframes tests/
@@ -104,6 +112,23 @@ def test_case_RTS_GMLC():
     assert cf_lc.gencost.columns.equals(cols)
 
     assert_frames_struct_equal(cf, cf_lc)
+
+    m.exit()
+
+
+@pytest.mark.skipif(not MATLAB_AVAILABLE, reason="MATLAB not available")
+def test_case_RTS_GMLC_matlab():
+    """
+    RTS-GMLC 73-bus case with bus_name; run power flow via to_mpc(backend="matlab")
+    using the MATLAB engine.
+    """
+    CASE_NAME = "case_RTS_GMLC.m"
+
+    m = start_instance(engine="matlab")
+
+    cf = CaseFrames(CASE_NAME, load_case_engine=m)
+    mpc = cf.to_mpc(backend="matlab")
+    run_matlab_cmd("runpf(mpc)", m=m, mpc=mpc)
 
     m.exit()
 
