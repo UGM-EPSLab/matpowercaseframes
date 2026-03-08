@@ -19,6 +19,7 @@ except ImportError:
     pytest -n auto -rA --cov-report term --cov=matpowercaseframes tests/
 
     case9          : default MATPOWER case, polynomial gencost (TYPE=2)
+    case9Q         : case with Q gencost
     case4_dist     : small distribution network case
     case118        : medium-scale IEEE case, tests all three loading methods
     case_RTS_GMLC  : piecewise linear gencost (TYPE=1) and contains bus_name
@@ -39,6 +40,16 @@ def test_case9():
     cf = CaseFrames(CASE_NAME)
     cols = pd.Index(["MODEL", "STARTUP", "SHUTDOWN", "NCOST", "C2", "C1", "C0"])
     assert cf.gencost.columns.equals(cols)
+
+
+def test_case9Q():
+    """
+    Default MATPOWER 9-bus case, polynomial gencost columns:
+        MODEL, STARTUP, SHUTDOWN, NCOST, C2, C1, C0.
+    """
+    CASE_NAME = "case9Q.m"
+    cf = CaseFrames(CASE_NAME)
+    assert len(cf.gencost) // len(cf.gen) == 2
 
 
 def test_case4_dist():

@@ -1045,11 +1045,12 @@ class CaseFrames(DataFramesStruct):
         # gencost is optional
         # NOTE: try except is better than checking hasattr for common possitive
         try:
-            if "gen_name" in self._attributes:
+            gencost_len = len(self.gencost)
+            if gencost_len == len(self.gen) and "gen_name" in self._attributes:
                 self.gencost.set_index(self.gen_name, drop=False, inplace=True)
             else:
                 self.gencost.set_index(
-                    pd.RangeIndex(1, len(self.gen.index) + 1, name="gen"),
+                    pd.RangeIndex(1, len(self.gencost.index) + 1, name="gen"),
                     drop=False,
                     inplace=True,
                 )
