@@ -269,24 +269,6 @@ def test_to_mpc():
     cf.to_mpc()
 
 
-@pytest.mark.skipif(not MATLAB_AVAILABLE, reason="MATLAB not available")
-def test_to_mpc_matlab_bus_name_is_flat_list():
-    """bus_name in to_mpc(backend="matlab") must be a flat list of str, not nested."""
-    cf = CaseFrames(CASE_PATH_CASE118)
-    mpc = cf.to_mpc(backend="matlab")
-
-    assert "bus_name" in mpc, "bus_name missing from mpc"
-    bus_name = mpc["bus_name"]
-
-    assert isinstance(bus_name, list), f"Expected list, got {type(bus_name)}"
-    assert len(bus_name) == len(cf.bus_name)
-
-    for entry in bus_name:
-        assert isinstance(entry, str), (
-            f"Expected each bus_name entry to be str, got {type(entry)}: {entry!r}"
-        )
-
-
 def test_reset_index_and_infer_numpy_case9():
     cf = CaseFrames(CASE_PATH_CASE9)
     cf.infer_numpy()

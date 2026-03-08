@@ -31,8 +31,10 @@ def test_case9():
 
 @pytest.mark.skipif(not MATLAB_AVAILABLE, reason="MATLAB not available")
 def test_case_RTS_GMLC_matlab():
-    """Load case_RTS_GMLC (has bus_name), convert via to_mpc(backend="matlab"),
-    and run power flow with matlab engine."""
+    """
+    Load case_RTS_GMLC (has bus_name), convert via to_mpc(backend="matlab"), and run
+    power flow with matlab engine.
+    """
     CASE_NAME = "case_RTS_GMLC.m"
 
     m = start_instance(engine="matlab")
