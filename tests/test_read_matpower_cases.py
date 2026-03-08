@@ -2,17 +2,39 @@ import warnings
 
 import numpy as np
 import pandas as pd
-from matpower import path_matpower, start_instance
+import pytest
+from matpower import path_matpower, run_matlab_cmd, start_instance
 
 from matpowercaseframes import CaseFrames, ReservesFrames, xGenDataTableFrames
 from matpowercaseframes.testing import assert_frames_struct_equal
 
+try:
+    import matlab.engine  # noqa: F401
+
+    MATLAB_AVAILABLE = True
+except ImportError:
+    MATLAB_AVAILABLE = False
+
 """
     pytest -n auto -rA --cov-report term --cov=matpowercaseframes tests/
+
+    case9          : default MATPOWER case, polynomial gencost (TYPE=2)
+    case4_dist     : small distribution network case
+    case118        : medium-scale IEEE case, tests all three loading methods
+    case_RTS_GMLC  : piecewise linear gencost (TYPE=1) and contains bus_name
+    t_case9_dcline : case with DC lines
+    case16am       : case with executable code inside .m file, requires load_case_engine
+    case9_load     : case with non-standard keys, tests allow_any_keys
+    ex_case3a      : case with operating reserves (ReservesFrames)
+    ex_xgd_uc      : case with unit-commitment extended data (xGenDataTableFrames)
 """
 
 
 def test_case9():
+    """
+    Default MATPOWER 9-bus case, polynomial gencost columns:
+        MODEL, STARTUP, SHUTDOWN, NCOST, C2, C1, C0.
+    """
     CASE_NAME = "case9.m"
     cf = CaseFrames(CASE_NAME)
     cols = pd.Index(["MODEL", "STARTUP", "SHUTDOWN", "NCOST", "C2", "C1", "C0"])
@@ -20,11 +42,16 @@ def test_case9():
 
 
 def test_case4_dist():
+    """Small 4-bus radial distribution network case."""
     CASE_NAME = "case4_dist.m"
     CaseFrames(CASE_NAME)
 
 
 def test_case118():
+    """
+    IEEE 118-bus case; tests file, engine, and MPC loading methods plus runpf
+    round-trip.
+    """
     m = start_instance()
 
     CASE_NAME = "case118.m"
@@ -47,7 +74,10 @@ def test_case118():
 
 
 def test_case_RTS_GMLC():
-    # NOTE: case with gencost piecewise linear
+    """
+    RTS-GMLC 73-bus case with piecewise linear gencost (TYPE=1):
+        MODEL, STARTUP, SHUTDOWN, NCOST, X1, Y1, ...
+    """
     m = start_instance()
 
     # TODO: test read without load_case_engine
@@ -86,13 +116,33 @@ def test_case_RTS_GMLC():
     m.exit()
 
 
+@pytest.mark.skipif(not MATLAB_AVAILABLE, reason="MATLAB not available")
+def test_case_RTS_GMLC_matlab():
+    """
+    RTS-GMLC 73-bus case with bus_name; run power flow via to_mpc(backend="matlab")
+    using the MATLAB engine.
+    """
+    CASE_NAME = "case_RTS_GMLC.m"
+
+    m = start_instance(engine="matlab")
+
+    cf = CaseFrames(CASE_NAME, load_case_engine=m)
+    mpc = cf.to_mpc(backend="matlab")
+    run_matlab_cmd("runpf(mpc)", m=m, mpc=mpc)
+
+    m.exit()
+
+
 def test_t_case9_dcline():
+    """case9 extended with DC lines from MATPOWER internal test library."""
     CASE_NAME = f"{path_matpower}/lib/t/t_case9_dcline.m"
     CaseFrames(CASE_NAME)
 
 
 def test_loadcase_case16am():
-    # NOTE: case with code inside .m file
+    """
+    16-bus case with executable MATLAB code in .m file that requires load_case_engine.
+    """
     m = start_instance()
     CASE_NAME = "case16am.m"
     CaseFrames(CASE_NAME, load_case_engine=m)
@@ -100,6 +150,7 @@ def test_loadcase_case16am():
 
 
 def test_read_without_ext():
+    """case9 and case9.m must resolve to identical frames."""
     CASE_NAME = "case9.m"
     cf = CaseFrames(CASE_NAME)
 
@@ -110,6 +161,10 @@ def test_read_without_ext():
 
 
 def test_read_allow_any_keys():
+    """
+    case9_load has a non-standard 'load' field that only visible with
+    `allow_any_keys=True`.
+    """
     CASE_NAME = "data/case9_load.m"
     cf = CaseFrames(CASE_NAME)
     assert "load" not in cf.attributes
@@ -119,6 +174,10 @@ def test_read_allow_any_keys():
 
 
 def test_read_case_reserve():
+    """
+    ex_case3a includes operating reserve data parsed into ReservesFrames:
+        zones, req, cost, qty.
+    """
     m = start_instance()
     CASE_NAME = "data/ex_case3a.m"
     cf = CaseFrames(CASE_NAME, load_case_engine=m)
@@ -168,7 +227,10 @@ def test_read_case_reserve():
 
 
 def test_read_xgd_table():
-    """Test reading and using xGenDataTableFrames."""
+    """Test reading and using xGenDataTableFrames.
+
+    ex_xgd_uc provides unit-commitment extended data parsed into xGenDataTableFrames.
+    """
     m = start_instance()
 
     CASE_NAME = "data/ex_case3a.m"

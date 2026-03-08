@@ -8,6 +8,13 @@ from matpowercaseframes import CaseFrames
 from matpowercaseframes.idx import BUS_I, BUS_TYPE
 from matpowercaseframes.testing import assert_frames_struct_equal
 
+try:
+    import matlab.engine  # noqa: F401
+
+    MATLAB_AVAILABLE = True
+except ImportError:
+    MATLAB_AVAILABLE = False
+
 """
     pytest -n auto -rA --lf -c pyproject.toml --cov-report term-missing --cov=matpowercaseframes tests/
 """
