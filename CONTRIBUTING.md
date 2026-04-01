@@ -30,7 +30,6 @@ Optionally, if you want to test matlab compatibility, you can install `matlabeng
 uv pip install matlabengine
 ```
 
-
 ## Install in development mode
 
 ```shell

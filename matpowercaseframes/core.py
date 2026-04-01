@@ -1023,15 +1023,48 @@ class CaseFrames(DataFramesStruct):
 
     def _update_index(self, allow_any_keys=False):
         """
-        Update the index of the bus, branch, and generator tables based on naming.
+        Update the index of the bus, branch, generator, etc tables based on naming.
 
+        For buses, prefer:
+        1) bus_name (if available)
+        2) BUS_I column (if available)
+        3) a 1-based RangeIndex fallback
 
         Args:
             allow_any_keys (bool):
                 Whether to update index for any keys beyond standard attributes.
         """
+
         for attribute, attribute_name in zip(["bus", "branch", "gen"], ATTRIBUTES_NAME):
             attribute_data = getattr(self, attribute)
+
+            if attribute == "bus":
+                try:
+                    attribute_name_data = getattr(self, attribute_name)  # bus_name
+                    attribute_data.set_index(
+                        attribute_name_data, drop=False, inplace=True
+                    )
+                    continue
+                except AttributeError:
+                    pass
+
+                if (
+                    isinstance(attribute_data, pd.DataFrame)
+                    and "BUS_I" in attribute_data.columns
+                ):
+                    attribute_data.set_index(
+                        attribute_data["BUS_I"].astype(int), drop=False, inplace=True
+                    )
+                    attribute_data.index.name = "bus"
+                    continue
+
+                attribute_data.set_index(
+                    pd.RangeIndex(1, len(attribute_data.index) + 1, name="bus"),
+                    drop=False,
+                    inplace=True,
+                )
+                continue
+
             try:
                 attribute_name_data = getattr(self, attribute_name)
                 attribute_data.set_index(attribute_name_data, drop=False, inplace=True)
