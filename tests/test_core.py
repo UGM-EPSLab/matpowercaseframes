@@ -304,3 +304,21 @@ def test_reset_index_and_infer_numpy_case9():
     cf_reset.reset_index()
     cf_reset.reset_index()
     assert_frames_struct_equal(cf, cf_reset)
+
+    # removing first row of bus and gen, converting to mpc, then back to cf:
+    # bus index is preserved (via BUS_I), but generator index is not (no named ID column)
+    cf2 = CaseFrames(CASE_PATH_CASE9)
+    cf2.bus = cf2.bus.iloc[1:]  # drop first bus row, so bus.index starts at 2
+    cf2.gen = cf2.gen.iloc[1:]  # drop first gen row, so gen.index starts at 2
+
+    assert cf2.bus.index[0] == 2
+    assert cf2.gen.index[0] == 2
+
+    mpc = cf2.to_mpc()
+    cf2_rt = CaseFrames(mpc)
+
+    # BUS_I is explicit so it survives the round-trip
+    assert np.array_equal(cf2_rt.bus["BUS_I"].values, cf2.bus["BUS_I"].values)
+
+    # gen has no named index column — round-trip resets to 1-based RangeIndex
+    assert cf2_rt.gen.index.tolist() == list(range(1, len(cf2_rt.gen) + 1))
