@@ -4,7 +4,7 @@ octave-workspace
 # Local
 tests/results/*.xlsx
 tests/results/**/*.xlsx
-
+data/*.xlsx
 
 # Playground
 playground.ipynb
